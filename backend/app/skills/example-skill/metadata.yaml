@@ -1,0 +1,10 @@
+name: example-skill
+description: An example skill template that demonstrates how to create custom skills
+version: "1.0.0"
+author: Your Name
+enabled: true
+category: Templates
+tags:
+  - example
+  - template
+  - skill
