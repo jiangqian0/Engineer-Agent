@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Plus, Code2, Zap, Server, Rocket, ShieldCheck, DollarSign, Puzzle, BookOpen, Bot, FileText, BarChart3, Clock, ChevronDown, ChevronRight, Settings } from "lucide-react";
+import { Plus, Code2, Zap, Server, Rocket, ShieldCheck, DollarSign, Puzzle, BookOpen, Bot, FileText, BarChart3, Clock, ChevronDown, ChevronRight, Settings, Pencil, Trash2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import { usePathname, useRouter } from "next/navigation";
 
 const menuItems = [
@@ -42,44 +43,152 @@ const menuItems = [
   },
 ];
 
-const recentSessions = [
-  { id: "1", title: "ECS Scaling Plan" },
-  { id: "2", title: "Security Audit Report" },
-  { id: "3", title: "Cost Analysis" },
-];
+interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count?: number;
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [historyExpanded, setHistoryExpanded] = React.useState(true);
+  const [conversations, setConversations] = React.useState<Conversation[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = React.useState("");
+  const [hoveredId, setHoveredId] = React.useState<string | null>(null);
 
   const isActive = (href: string) => {
     if (href === "/chat" && pathname === "/") return true;
     return pathname.startsWith(href);
   };
 
+  React.useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const res = await fetch("/api/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          setConversations(data.conversations || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error);
+      }
+    };
+    fetchConversations();
+  }, []);
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (days === 0) {
+      return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    } else if (days === 1) {
+      return "Yesterday";
+    } else if (days < 7) {
+      return `${days} days ago`;
+    } else {
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+  };
+
+  const handleConversationClick = (convId: string) => {
+    router.push(`/chat?conversation=${convId}`);
+  };
+
+  const handleRename = async (convId: string) => {
+    if (!editingTitle.trim()) {
+      setEditingId(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/conversations/${convId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editingTitle.trim() })
+      });
+
+      if (res.ok) {
+        setConversations(prev =>
+          prev.map(c => c.id === convId ? { ...c, title: editingTitle.trim() } : c)
+        );
+      }
+    } catch (error) {
+      console.error("Failed to rename conversation:", error);
+    }
+
+    setEditingId(null);
+    setEditingTitle("");
+  };
+
+  const handleDelete = async (convId: string) => {
+    if (!confirm("Delete this conversation?")) return;
+
+    try {
+      const res = await fetch(`/api/conversations/${convId}`, {
+        method: "DELETE"
+      });
+
+      if (res.ok) {
+        setConversations(prev => prev.filter(c => c.id !== convId));
+        if (pathname.includes(convId)) {
+          router.push("/chat");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+    }
+  };
+
+  const startEditing = (conv: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(conv.id);
+    setEditingTitle(conv.title);
+  };
+
+  const startDelete = (convId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleDelete(convId);
+  };
+
+  const cancelEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+    setEditingTitle("");
+  };
+
+  const confirmEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleRename(editingId!);
+  };
+
   return (
-    <div className="flex h-full w-full flex-col bg-manulife-lightGreyBg">
-      {/* Header Section */}
-      <div className="bg-white border-b border-manulife-lightGrey">
-        <div className="p-4 border-t-4 border-manulife-green">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-manulife-green flex items-center justify-center">
-              <span className="text-white text-lg font-bold">AI</span>
-            </div>
-            <div>
-              <h2 className="font-bold text-lg text-gray-900">Agent Hub</h2>
-              <p className="text-xs text-manulife-grey">Enterprise Edition</p>
-            </div>
+    <div className="w-64 h-full bg-white flex flex-col border-r border-manulife-lightGrey">
+      {/* Logo Section */}
+      <div className="p-4 border-t-4 border-manulife-green">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 bg-manulife-green flex items-center justify-center">
+            <span className="text-white text-lg font-bold">AI</span>
           </div>
-          <Button
-            className="w-full justify-center gap-2 bg-manulife-green hover:bg-manulife-green/90 text-white font-medium"
-            onClick={() => router.push("/chat")}
-          >
-            <Plus className="w-5 h-5" />
-            <span>New Conversation</span>
-          </Button>
+          <div>
+            <h2 className="font-bold text-lg text-gray-900">Agent Hub</h2>
+            <p className="text-xs text-manulife-grey">Enterprise Edition</p>
+          </div>
         </div>
+        <Button
+          className="w-full justify-center gap-2 bg-manulife-green hover:bg-manulife-green/90 text-white font-medium"
+          onClick={() => router.push("/chat")}
+        >
+          <Plus className="w-5 h-5" />
+          <span>New Conversation</span>
+        </Button>
       </div>
 
       {/* Menu Section */}
@@ -143,19 +252,84 @@ export function Sidebar() {
 
           {historyExpanded && (
             <div className="pb-2">
-              {recentSessions.map((session) => (
-                <button
-                  key={session.id}
-                  className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3"
-                >
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="truncate">{session.title}</span>
+              {conversations.length === 0 ? (
+                <p className="px-4 py-2.5 text-sm text-gray-400">No conversations yet</p>
+              ) : (
+                conversations.slice(0, 10).map((conv) => (
+                  <div
+                    key={conv.id}
+                    className="group relative"
+                    onMouseEnter={() => setHoveredId(conv.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                  >
+                    {editingId === conv.id ? (
+                      <div className="px-4 py-2 flex items-center gap-2">
+                        <Input
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-8 text-sm flex-1"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleRename(conv.id);
+                            if (e.key === "Escape") {
+                              setEditingId(null);
+                              setEditingTitle("");
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => confirmEditing(e)}
+                          className="p-1 hover:bg-green-100 text-green-600"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => cancelEditing(e)}
+                          className="p-1 hover:bg-red-100 text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleConversationClick(conv.id)}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-3"
+                      >
+                        <Clock className="w-4 h-4 text-gray-400 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate">{conv.title || "Untitled"}</p>
+                          <p className="text-xs text-gray-400">{formatDate(conv.updated_at)}</p>
+                        </div>
+                        {hoveredId === conv.id && (
+                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => startEditing(conv, e)}
+                              className="p-1 hover:bg-blue-100 text-blue-600 rounded"
+                              title="Rename"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => startDelete(conv.id, e)}
+                              className="p-1 hover:bg-red-100 text-red-600 rounded"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+              {conversations.length > 10 && (
+                <button className="w-full text-left px-4 py-2.5 text-sm text-manulife-green hover:bg-gray-50 font-medium flex items-center gap-3">
+                  <ChevronRight className="w-4 h-4" />
+                  View All ({conversations.length})
                 </button>
-              ))}
-              <button className="w-full text-left px-4 py-2.5 text-sm text-manulife-green hover:bg-gray-50 font-medium flex items-center gap-3">
-                <ChevronRight className="w-4 h-4" />
-                View All
-              </button>
+              )}
             </div>
           )}
         </div>
