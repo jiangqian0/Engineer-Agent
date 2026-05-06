@@ -3,22 +3,19 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Paperclip, ChevronDown, Loader2, Brain, Bot, Check, AlertCircle, Clock, Activity, ChevronRight, ChevronDown as ChevronDownIcon, Puzzle, Square } from "lucide-react";
+import { Send, Paperclip, ChevronDown, Loader2, Brain, Bot, Check, AlertCircle, Clock, Activity, ChevronRight, ChevronDown as ChevronDownIcon, Puzzle, Square, Copy, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MemoryPanel } from "@/components/chat/memory-panel";
+import { WorkspacePanel } from "@/components/chat/workspace-panel";
 import { CodeBlock } from "@/components/chat/code-block";
 import { useSearchParams } from "next/navigation";
 
-interface ThinkingContentProps {
-  content: string;
-  isStreaming?: boolean;
-}
-
-const ThinkingContent: React.FC<ThinkingContentProps> = ({ content, isStreaming }) => {
+// 思考内容组件 - 始终显示在消息之前
+const ThinkingContent: React.FC<{ content: string; isStreaming?: boolean }> = ({ content, isStreaming }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
   const contentRef = React.useRef<HTMLDivElement>(null);
 
@@ -28,6 +25,22 @@ const ThinkingContent: React.FC<ThinkingContentProps> = ({ content, isStreaming 
     }
   }, [content, isStreaming]);
 
+  if (!content) return null;
+
+  // 检查是否是简短的步骤提示（不包含换行且较短）
+  const isShortStep = !content.includes('\n') && content.length < 100;
+
+  if (isShortStep) {
+    // 简短步骤：显示为内联提示
+    return (
+      <div className="my-2 flex items-center gap-2 text-sm text-blue-600">
+        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <span>{content}</span>
+      </div>
+    );
+  }
+
+  // 长思考内容：显示为可折叠卡片
   return (
     <div className="my-3 rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 overflow-hidden shadow-sm">
       <button
@@ -38,7 +51,7 @@ const ThinkingContent: React.FC<ThinkingContentProps> = ({ content, isStreaming 
           <Brain className="w-3.5 h-3.5 text-purple-600" />
         </div>
         <span className="text-sm font-semibold text-purple-700">
-          {isExpanded ? "Hide thinking" : "Show thinking"}
+          {isExpanded ? "Hide thinking" : `Show thinking (${content.length} chars)`}
         </span>
         <div className="ml-auto">
           {isExpanded ? (
@@ -48,7 +61,7 @@ const ThinkingContent: React.FC<ThinkingContentProps> = ({ content, isStreaming 
           )}
         </div>
       </button>
-      
+
       {isExpanded && (
         <div ref={contentRef} className="px-4 pb-4 border-t border-purple-100">
           <div className="mt-3 text-sm text-purple-800 whitespace-pre-wrap leading-relaxed">
@@ -63,6 +76,95 @@ const ThinkingContent: React.FC<ThinkingContentProps> = ({ content, isStreaming 
   );
 };
 
+// 可复制的表格组件
+const CopyableTable: React.FC<{ children: React.ReactNode; tableText: string }> = ({ children, tableText }) => {
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(tableText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  return (
+    <div className="relative group my-4">
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleCopy}
+          className="h-7 px-2 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-900 border shadow-sm"
+        >
+          {copied ? (
+            <CheckCheck className="w-4 h-4 text-green-600" />
+          ) : (
+            <Copy className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
+      <div className="overflow-x-auto select-text">
+        <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+          {children}
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// 解析 markdown 表格为纯文本
+const parseTableToText = (node: any): string => {
+  let result = "";
+
+  const processNode = (n: any) => {
+    if (!n) return;
+
+    if (n.type === "table") {
+      // 处理表头
+      if (n.children?.[0]) {
+        const headerRow = n.children[0];
+        const headers = headerRow.children
+          ?.filter((cell: any) => cell.type === "tableCell")
+          .map((cell: any) => {
+            const text = extractText(cell);
+            return text || "";
+          }) || [];
+        result += headers.join(" | ") + "\n";
+        result += headers.map(() => "---").join(" | ") + "\n";
+
+        // 处理数据行
+        for (let i = 1; i < n.children.length; i++) {
+          const row = n.children[i];
+          const cells = row.children
+            ?.filter((cell: any) => cell.type === "tableCell")
+            .map((cell: any) => {
+              const text = extractText(cell);
+              return text || "";
+            }) || [];
+          result += cells.join(" | ") + "\n";
+        }
+      }
+    }
+  };
+
+  const extractText = (node: any): string => {
+    if (!node) return "";
+    if (typeof node === "string") return node;
+    if (node.text) return node.text;
+    if (node.value) return node.value;
+    if (node.children) {
+      return node.children.map(extractText).join("");
+    }
+    return "";
+  };
+
+  processNode(node);
+  return result.trim();
+};
+
 interface MessageWithThinkingProps {
   content: string;
   isStreaming?: boolean;
@@ -71,10 +173,10 @@ interface MessageWithThinkingProps {
 const MessageWithThinking: React.FC<MessageWithThinkingProps> = ({ content, isStreaming }) => {
   const thinkingRegex = /\[THINKING\]([\s\S]*?)\[\/THINKING\]/g;
   const parts: Array<{ type: "thinking" | "content"; content: string }> = [];
-  
+
   let lastIndex = 0;
   let match;
-  
+
   while ((match = thinkingRegex.exec(content)) !== null) {
     if (match.index > lastIndex) {
       parts.push({ type: "content", content: content.slice(lastIndex, match.index) });
@@ -82,14 +184,133 @@ const MessageWithThinking: React.FC<MessageWithThinkingProps> = ({ content, isSt
     parts.push({ type: "thinking", content: match[1] });
     lastIndex = match.index + match[0].length;
   }
-  
+
   if (lastIndex < content.length) {
     parts.push({ type: "content", content: content.slice(lastIndex) });
   }
-  
+
   if (parts.length === 0) {
     parts.push({ type: "content", content });
   }
+
+  // 检测 markdown 内容是否完整
+  const isMarkdownComplete = (text: string): boolean => {
+    if (!isStreaming) return true;
+
+    // 检查未闭合的代码块
+    const codeBlocks = (text.match(/```/g) || []).length;
+    if (codeBlocks % 2 !== 0) return false;
+
+    return true;
+  };
+
+  // 提取表格文本用于复制
+  const extractTableText = (node: any): string => {
+    const lines: string[] = [];
+
+    if (node.type === "table") {
+      // 处理表头
+      if (node.children?.[0]) {
+        const headerRow = node.children[0];
+        const headers = headerRow.children
+          ?.filter((cell: any) => cell.type === "tableCell")
+          .map((cell: any) => {
+            if (cell.children) {
+              return cell.children.map((c: any) => c.text || "").join("");
+            }
+            return cell.text || "";
+          }) || [];
+        lines.push(headers.join(" | "));
+        lines.push(headers.map(() => "---").join(" | "));
+
+        // 处理数据行
+        for (let i = 1; i < node.children.length; i++) {
+          const row = node.children[i];
+          if (row.children) {
+            const cells = row.children
+              .filter((cell: any) => cell.type === "tableCell")
+              .map((cell: any) => {
+                if (cell.children) {
+                  return cell.children.map((c: any) => c.text || "").join("");
+                }
+                return cell.text || "";
+              });
+            lines.push(cells.join(" | "));
+          }
+        }
+      }
+    }
+
+    return lines.join("\n");
+  };
+
+  // Markdown 组件配置
+  const MarkdownComponents = {
+    code({node, className, children, ...props}: any) {
+      const match = /language-(\w+)/.exec(className || '');
+      const isInlineCode = !match && !className;
+
+      if (isInlineCode) {
+        return (
+          <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+            {children}
+          </code>
+        );
+      }
+
+      return (
+        <CodeBlock
+          code={String(children).replace(/\n$/, '')}
+          language={match ? match[1] : ''}
+          className="my-3"
+        />
+      );
+    },
+    table({node, children, ...props}: any) {
+      const tableText = extractTableText(node);
+      return (
+        <CopyableTable tableText={tableText}>
+          {children}
+        </CopyableTable>
+      );
+    },
+    p({children}: any) {
+      return <p className="whitespace-pre-wrap leading-relaxed mb-2 last:mb-0">{children}</p>;
+    },
+    h1({children}: any) {
+      return <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>;
+    },
+    h2({children}: any) {
+      return <h2 className="text-xl font-semibold mt-3 mb-2">{children}</h2>;
+    },
+    h3({children}: any) {
+      return <h3 className="text-lg font-semibold mt-3 mb-1">{children}</h3>;
+    },
+    ul({children}: any) {
+      return <ul className="list-disc ml-4 space-y-1">{children}</ul>;
+    },
+    ol({children}: any) {
+      return <ol className="list-decimal ml-4 space-y-1">{children}</ol>;
+    },
+    li({children}: any) {
+      return <li className="ml-4">{children}</li>;
+    },
+    strong({children}: any) {
+      return <strong className="font-semibold">{children}</strong>;
+    },
+    em({children}: any) {
+      return <em className="italic">{children}</em>;
+    },
+    blockquote({children}: any) {
+      return <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">{children}</blockquote>;
+    },
+    th({children}: any) {
+      return <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50 select-text">{children}</th>;
+    },
+    td({children}: any) {
+      return <td className="px-4 py-2 text-sm text-gray-900 border-r border-gray-100 last:border-r-0 select-text">{children}</td>;
+    },
+  };
 
   return (
     <div className="space-y-2">
@@ -103,78 +324,21 @@ const MessageWithThinking: React.FC<MessageWithThinkingProps> = ({ content, isSt
             />
           );
         }
-        
+
+        // 流式输出时，如果 markdown 不完整则显示原始文本
+        if (isStreaming && !isMarkdownComplete(part.content)) {
+          return (
+            <div key={index} className="whitespace-pre-wrap leading-relaxed">
+              {part.content}
+            </div>
+          );
+        }
+
         return (
           <div key={index} className="markdown-body select-text">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              components={{
-                code({node, className, children, ...props}: any) {
-                  const match = /language-(\w+)/.exec(className || '');
-                  const isInlineCode = !match && !className;
-
-                  if (isInlineCode) {
-                    return (
-                      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
-                        {children}
-                      </code>
-                    );
-                  }
-
-                  return (
-                    <CodeBlock
-                      code={String(children).replace(/\n$/, '')}
-                      language={match ? match[1] : ''}
-                      className="my-3"
-                    />
-                  );
-                },
-                p({children}) {
-                  return <p className="whitespace-pre-wrap leading-relaxed mb-2 last:mb-0">{children}</p>;
-                },
-                h1({children}) {
-                  return <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>;
-                },
-                h2({children}) {
-                  return <h2 className="text-xl font-semibold mt-3 mb-2">{children}</h2>;
-                },
-                h3({children}) {
-                  return <h3 className="text-lg font-semibold mt-3 mb-1">{children}</h3>;
-                },
-                ul({children}) {
-                  return <ul className="list-disc ml-4 space-y-1">{children}</ul>;
-                },
-                ol({children}) {
-                  return <ol className="list-decimal ml-4 space-y-1">{children}</ol>;
-                },
-                li({children}) {
-                  return <li className="ml-4">{children}</li>;
-                },
-                strong({children}) {
-                  return <strong className="font-semibold">{children}</strong>;
-                },
-                em({children}) {
-                  return <em className="italic">{children}</em>;
-                },
-                blockquote({children}) {
-                  return <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">{children}</blockquote>;
-                },
-                table({children}) {
-                  return (
-                    <div className="overflow-x-auto my-4 select-text">
-                      <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                        {children}
-                      </table>
-                    </div>
-                  );
-                },
-                th({children}) {
-                  return <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50 select-text">{children}</th>;
-                },
-                td({children}) {
-                  return <td className="px-4 py-2 text-sm text-gray-900 border-r border-gray-100 last:border-r-0 select-text">{children}</td>;
-                },
-              }}
+              components={MarkdownComponents}
             >
               {part.content}
             </ReactMarkdown>
@@ -233,11 +397,36 @@ export default function ChatPage() {
   const [currentConversationId, setCurrentConversationId] = React.useState<string | null>(null);
   const [isStreaming, setIsStreaming] = React.useState(false);
   const [streamedContent, setStreamedContent] = React.useState("");
+  const [streamedThinking, setStreamedThinking] = React.useState("");  // 实时思考内容
   const [showStreamingContainer, setShowStreamingContainer] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [showMemoryPanel, setShowMemoryPanel] = React.useState(false);
   const [showExecutionPanel, setShowExecutionPanel] = React.useState(true);
   const [lastUserMessage, setLastUserMessage] = React.useState<string>("");
+  const [currentToolCall, setCurrentToolCall] = React.useState<string | null>(null);  // 当前正在调用的工具
+  const [toolExecutionStatus, setToolExecutionStatus] = React.useState<{
+    tool: string;
+    status: 'preparing' | 'executing' | 'writing' | 'complete' | 'done' | 'error';
+    message: string;
+    startTime: number;
+    fileName?: string;
+    progress?: number;
+    written?: number;
+    total?: number;
+  } | null>(null);  // 工具执行详细状态
+  const [thinkingSteps, setThinkingSteps] = React.useState<Array<{
+    content: string;
+    details?: string;
+    result_summary?: string;
+    timestamp: number;
+  }>>([]);  // 思考步骤列表
+  const [codeOutput, setCodeOutput] = React.useState<string>("");  // 当前代码输出
+  const [showCodeBlock, setShowCodeBlock] = React.useState(false);  // 是否显示代码块
+  const [codeBlockInfo, setCodeBlockInfo] = React.useState<{
+    fileName: string;
+    language: string;
+    totalLines: number;
+  } | null>(null);  // 代码块信息
 
   const [logs, setLogs] = React.useState<LogEntry[]>([]);
   const [steps, setSteps] = React.useState<Step[]>([
@@ -315,6 +504,12 @@ export default function ChatPage() {
       { id: "3", title: "Processing Request", status: "pending" },
       { id: "4", title: "Generating Response", status: "pending" },
     ]);
+    setCurrentToolCall(null);
+    setToolExecutionStatus(null);
+    setThinkingSteps([]);
+    setCodeOutput("");
+    setShowCodeBlock(false);
+    setCodeBlockInfo(null);
   };
 
   const toggleKb = (id: string) => {
@@ -345,6 +540,8 @@ export default function ChatPage() {
       abortControllerRef.current.abort();
       setIsStreaming(false);
       setShowStreamingContainer(false);
+      setCurrentToolCall(null);  // 清除当前工具调用
+      setToolExecutionStatus(null);  // 清除工具执行状态
       addLog("warning", "Response generation stopped by user");
     }
   };
@@ -406,8 +603,15 @@ export default function ChatPage() {
     setIsStreaming(true);
     setError(null);
     setStreamedContent("");
+    setStreamedThinking("");  // 重置思考内容
     setShowStreamingContainer(true);
     resetExecutionState();
+    setCurrentToolCall(null);
+    setToolExecutionStatus(null);
+    setThinkingSteps([]);
+    setCodeOutput("");
+    setShowCodeBlock(false);
+    setCodeBlockInfo(null);
 
     abortControllerRef.current = new AbortController();
 
@@ -428,6 +632,7 @@ export default function ChatPage() {
     addLog("info", "Sending request to AI model...");
 
     try {
+      // 使用 Next.js API 路由代理，避免 CORS 问题
       const res = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -435,9 +640,11 @@ export default function ChatPage() {
           message: userMessage,
           conversation_id: currentConversationId,
           knowledge_bases: selectedKb,
-          skill_id: selectedSkill
+          skill_id: selectedSkill,
+          enable_tools: true  // 启用真正的 Agent 工具调用
         }),
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current.signal,
+        cache: 'no-store',
       });
 
       if (!res.ok) {
@@ -451,8 +658,14 @@ export default function ChatPage() {
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let fullResponse = "";
+      let fullResponse = "";  // 完整的AI响应（包含思考标记）
+      let streamedText = "";  // 用于实时显示的正文内容
       let parseErrorCount = 0;
+      let thinkingBuffer = "";  // 思考内容缓冲区
+      let inThinking = false;  // 是否在思考块中
+      let pendingThinking = "";  // 待处理的思考内容（可能被分割）
+      setStreamedThinking("");
+      setStreamedContent("");
 
       while (true) {
         const { done, value } = await reader.read();
@@ -469,6 +682,7 @@ export default function ChatPage() {
             }
             try {
               const json = JSON.parse(data);
+              console.log("[Frontend] Received event:", json.type, json);
               if (json.error) {
                 throw new Error(json.error);
               }
@@ -477,9 +691,173 @@ export default function ChatPage() {
                   setCurrentConversationId(json.conversation_id);
                   window.history.replaceState(null, "", `/chat?conversation=${json.conversation_id}`);
                 }
-              } else if (json.token) {
-                fullResponse += json.token;
-                setStreamedContent(fullResponse);
+              }
+              // 新的事件格式支持
+              else if (json.type === "thinking") {
+                thinkingBuffer = json.content;
+                setStreamedThinking(thinkingBuffer);
+              }
+              else if (json.type === "token") {
+                streamedText += json.content;
+                setStreamedContent(streamedText);
+                fullResponse += json.content;
+              }
+              else if (json.type === "tool_call") {
+                console.log(`[Tool Call] ${json.tool}`);
+                addLog("info", `Executing tool: ${json.tool}`);
+                setCurrentToolCall(json.tool);  // 显示当前调用的工具
+                setToolExecutionStatus({
+                  tool: json.tool,
+                  status: 'executing',
+                  message: `正在调用 ${json.tool}...`,
+                  startTime: Date.now()
+                });
+                setCodeOutput("");
+                setShowCodeBlock(false);
+              }
+              else if (json.type === "tool_result") {
+                const executionTime = toolExecutionStatus ? ((Date.now() - toolExecutionStatus.startTime) / 1000).toFixed(1) : '0';
+                setCurrentToolCall(null);  // 清除当前工具调用
+                if (json.success) {
+                  addLog("success", `Tool completed: ${json.tool} (${executionTime}s)`);
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'done', message: `✅ 执行完成 (${executionTime}s)` } : null);
+                } else {
+                  addLog("error", `Tool failed: ${json.error}`);
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'error', message: `❌ 执行失败: ${json.error}` } : null);
+                }
+              }
+              // 处理工具执行状态更新
+              else if (json.type === "status") {
+                const statusContent = json.content;
+                const toolName = json.tool || currentToolCall || '';
+                const message = json.message || '';
+
+                if (statusContent === "preparing") {
+                  setToolExecutionStatus({
+                    tool: toolName,
+                    status: 'preparing',
+                    message: message || `🔧 准备调用 ${toolName}...`,
+                    startTime: Date.now()
+                  });
+                }
+                else if (statusContent === "executing") {
+                  setToolExecutionStatus({
+                    tool: toolName,
+                    status: 'executing',
+                    message: message || `⚙️ 正在执行 ${toolName}...`,
+                    startTime: Date.now()
+                  });
+                }
+                else if (statusContent === "writing") {
+                  setToolExecutionStatus(prev => prev ? {
+                    ...prev,
+                    status: 'writing',
+                    message: message || `📝 正在写入文件${json.file_name ? ': ' + json.file_name : ''}...`,
+                    fileName: json.file_name,
+                    totalSize: json.total_size
+                  } : null);
+                  setShowCodeBlock(true);
+                }
+                else if (statusContent === "complete") {
+                  const executionTime = toolExecutionStatus ? ((Date.now() - toolExecutionStatus.startTime) / 1000).toFixed(1) : '0';
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'complete', message: `✅ ${toolName} 执行完成 (${executionTime}s)` } : null);
+                }
+                else if (statusContent === "done") {
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'done' } : null);
+                }
+              }
+              // 处理思考步骤
+              else if (json.type === "thinking_step") {
+                const step = {
+                  content: json.content,
+                  details: json.details,
+                  result_summary: json.result_summary,
+                  timestamp: Date.now()
+                };
+                setThinkingSteps(prev => [...prev.slice(-9), step]);  // 保留最近10条
+
+                if (json.result_summary) {
+                  addLog("success", json.content);
+                } else {
+                  addLog("info", json.content);
+                }
+              }
+              // 处理代码输出（流式）
+              else if (json.type === "code_output") {
+                setCodeOutput(prev => prev + json.content);
+                setToolExecutionStatus(prev => prev ? {
+                  ...prev,
+                  progress: json.progress,
+                  written: json.written,
+                  total: json.total
+                } : null);
+              }
+              // 处理代码块开始
+              else if (json.type === "code_block_start") {
+                setShowCodeBlock(true);
+                setCodeBlockInfo({
+                  fileName: json.file_name,
+                  language: json.language,
+                  totalLines: 0
+                });
+                setCodeOutput("");
+                addLog("info", `Creating file: ${json.file_path || json.file_name}`);
+              }
+              // 处理代码块结束
+              else if (json.type === "code_block_end") {
+                setCodeBlockInfo(prev => prev ? { ...prev, totalLines: json.total_lines } : null);
+                addLog("success", `File created: ${json.file_name} (${json.total_lines} lines)`);
+              }
+              // 兼容旧格式
+              else if (json.token !== undefined) {
+                const token = json.token;
+
+                // 检查是否包含思考开始标记
+                if (token.includes("[THINKING]")) {
+                  // 分割思考标记前后的内容
+                  const parts = token.split("[THINKING]");
+                  if (parts[0]) {
+                    streamedText += parts[0];
+                    setStreamedContent(streamedText);
+                  }
+                  pendingThinking = parts.slice(1).join("[THINKING]");
+                  inThinking = true;
+
+                  // 检查是否有结束标记在同一 token 中
+                  if (pendingThinking.includes("[/THINKING]")) {
+                    const endParts = pendingThinking.split("[/THINKING]");
+                    thinkingBuffer += endParts[0];
+                    setStreamedThinking(thinkingBuffer);
+                    streamedText += endParts.slice(1).join("[/THINKING]");
+                    setStreamedContent(streamedText);
+                    thinkingBuffer = "";
+                    pendingThinking = "";
+                    inThinking = false;
+                  }
+                }
+                // 检查是否包含思考结束标记
+                else if (token.includes("[/THINKING]")) {
+                  const parts = token.split("[/THINKING]");
+                  thinkingBuffer += parts[0];
+                  setStreamedThinking(thinkingBuffer);
+                  streamedText += parts.slice(1).join("[/THINKING]");
+                  setStreamedContent(streamedText);
+                  thinkingBuffer = "";
+                  inThinking = false;
+                }
+                // 在思考块中
+                else if (inThinking) {
+                  thinkingBuffer += token;
+                  setStreamedThinking(thinkingBuffer);
+                }
+                // 普通内容
+                else {
+                  streamedText += token;
+                  setStreamedContent(streamedText);
+                }
+
+                // 累加到完整响应
+                fullResponse += token;
               }
             } catch (e) {
               parseErrorCount++;
@@ -497,6 +875,7 @@ export default function ChatPage() {
       const assistantMessage: Message = { role: "assistant", content: fullResponse };
       setMessages(prev => [...prev, assistantMessage]);
       setStreamedContent("");
+      setStreamedThinking("");  // 重置思考内容
       setShowStreamingContainer(false);
 
       updateStep("4", "completed");
@@ -507,7 +886,9 @@ export default function ChatPage() {
       addLog("error", err.message || "Request failed");
       updateStep("3", "error");
       setMessages(prev => prev.slice(0, -1));
+      setStreamedThinking("");  // 重置思考内容
       setShowStreamingContainer(false);
+      setCurrentToolCall(null);  // 清除当前工具调用
     } finally {
       setIsStreaming(false);
     }
@@ -589,7 +970,7 @@ export default function ChatPage() {
             ) : (
               <div className="space-y-6">
                 {messages.map((msg, idx) => (
-                  <div key={idx} className={cn(
+                  <div key={`${msg.timestamp || ''}-${idx}`} className={cn(
                     "flex gap-3",
                     msg.role === "user" && "flex-row-reverse"
                   )}>
@@ -629,9 +1010,134 @@ export default function ChatPage() {
                       <Bot className="w-5 h-5 text-manulife-green" />
                     </div>
                     <div className="flex-1 max-w-3xl">
+                      {/* 实时思考内容 - 独立显示 */}
+                      <ThinkingContent
+                        content={streamedThinking}
+                        isStreaming={isStreaming}
+                      />
+                      {/* 实时正文内容 */}
                       <div className="inline-block p-4 rounded-lg bg-manulife-lightGreyBg text-gray-900 max-w-none">
-                        {renderMessageContent(streamedContent, true)}
+                        {streamedContent ? (
+                          renderMessageContent(streamedContent, true)
+                        ) : toolExecutionStatus || currentToolCall ? (
+                          <div className="space-y-3">
+                            {/* 工具执行状态卡片 */}
+                            {toolExecutionStatus && (
+                              <div className={`rounded-lg border p-4 ${
+                                toolExecutionStatus.status === 'preparing' ? 'bg-purple-50 border-purple-200' :
+                                toolExecutionStatus.status === 'executing' ? 'bg-blue-50 border-blue-200' :
+                                toolExecutionStatus.status === 'writing' ? 'bg-green-50 border-green-200' :
+                                toolExecutionStatus.status === 'complete' || toolExecutionStatus.status === 'done' ? 'bg-green-50 border-green-300' :
+                                toolExecutionStatus.status === 'error' ? 'bg-red-50 border-red-200' :
+                                'bg-gray-50 border-gray-200'
+                              }`}>
+                                {/* 状态头部 */}
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {(toolExecutionStatus.status === 'preparing' || toolExecutionStatus.status === 'executing' || toolExecutionStatus.status === 'writing') && (
+                                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                    )}
+                                    {toolExecutionStatus.status === 'complete' && <Check className="w-4 h-4 text-green-600" />}
+                                    {toolExecutionStatus.status === 'error' && <AlertCircle className="w-4 h-4 text-red-600" />}
+                                    <span className={`font-medium text-sm ${
+                                      toolExecutionStatus.status === 'preparing' ? 'text-purple-700' :
+                                      toolExecutionStatus.status === 'executing' || toolExecutionStatus.status === 'writing' ? 'text-blue-700' :
+                                      toolExecutionStatus.status === 'complete' || toolExecutionStatus.status === 'done' ? 'text-green-700' :
+                                      toolExecutionStatus.status === 'error' ? 'text-red-700' :
+                                      'text-gray-700'
+                                    }`}>
+                                      {toolExecutionStatus.message}
+                                    </span>
+                                  </div>
+                                  {/* 执行时间 */}
+                                  {toolExecutionStatus.startTime && (
+                                    <span className="text-xs text-gray-500">
+                                      <Clock className="w-3 h-3 inline mr-1" />
+                                      {((Date.now() - toolExecutionStatus.startTime) / 1000).toFixed(1)}s
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* 进度条（写入文件时） */}
+                                {toolExecutionStatus.status === 'writing' && toolExecutionStatus.progress !== undefined && (
+                                  <div className="mt-2">
+                                    <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
+                                      <span>写入进度</span>
+                                      <span>{toolExecutionStatus.progress}% ({toolExecutionStatus.written || 0}/{toolExecutionStatus.total || 0} bytes)</span>
+                                    </div>
+                                    <div className="w-full bg-green-200 rounded-full h-2">
+                                      <div
+                                        className="bg-green-600 h-2 rounded-full transition-all duration-150"
+                                        style={{ width: `${toolExecutionStatus.progress}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* 文件名显示 */}
+                                {toolExecutionStatus.fileName && (
+                                  <div className="mt-2 text-xs text-gray-600 flex items-center gap-1">
+                                    <Bot className="w-3 h-3" />
+                                    📄 {toolExecutionStatus.fileName}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* 代码输出区域 */}
+                            {showCodeBlock && codeOutput && (
+                              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                {/* 代码块头部 */}
+                                {codeBlockInfo && (
+                                  <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200">
+                                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                                      <Bot className="w-4 h-4" />
+                                      <span className="font-mono">{codeBlockInfo.fileName}</span>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {codeBlockInfo.language} • {codeOutput.split('\n').length} lines
+                                    </span>
+                                  </div>
+                                )}
+                                {/* 代码内容 */}
+                                <pre className="p-4 bg-gray-900 text-gray-100 overflow-x-auto text-sm max-h-96 overflow-y-auto">
+                                  <code>{codeOutput}</code>
+                                  {toolExecutionStatus?.status === 'writing' && (
+                                    <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse" />
+                                  )}
+                                </pre>
+                              </div>
+                            )}
+
+                            {/* 思考步骤列表 */}
+                            {thinkingSteps.length > 0 && (
+                              <div className="space-y-1.5">
+                                {thinkingSteps.map((step, index) => (
+                                  <div key={step.timestamp} className="flex items-start gap-2 text-sm">
+                                    <ChevronRight className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <span className={step.result_summary ? "text-green-700 font-medium" : "text-blue-700"}>
+                                        {step.content}
+                                      </span>
+                                      {step.result_summary && (
+                                        <div className="mt-1 text-xs text-gray-600 truncate">
+                                          {step.result_summary}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : !streamedThinking ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-manulife-green border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm text-manulife-grey">AI 正在思考中...</span>
+                          </div>
+                        ) : null}
                       </div>
+                      {/* 停止按钮 */}
                       <div className="mt-2 flex items-center gap-2">
                         <Button
                           size="sm"
@@ -845,6 +1351,7 @@ export default function ChatPage() {
               </ScrollArea>
             </div>
 
+            <WorkspacePanel isOpen={true} />
             {error && (
               <div className="bg-red-50 border border-red-200 p-4">
                 <div className="flex items-center gap-2 mb-2">
