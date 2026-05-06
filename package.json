@@ -1,0 +1,15 @@
+{
+  "name": "engineer-agent",
+  "version": "1.0.0",
+  "description": "Engineer Agent - AI Assistant for Engineering Tasks",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && pip install -r requirements.txt",
+    "build": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

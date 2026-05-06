@@ -1,12 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Send, Paperclip, Puzzle, Check, ChevronDown } from "lucide-react";
+import { Send, Paperclip, Puzzle, Check, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  timestamp?: string;
+}
 
 interface LogEntry {
   id: string;
@@ -20,21 +26,6 @@ interface Step {
   title: string;
   status: "pending" | "running" | "completed" | "error";
 }
-
-const mockSteps: Step[] = [
-  { id: "1", title: "Understanding Intent", status: "completed" },
-  { id: "2", title: "Selecting Agent: Cost Optimization", status: "completed" },
-  { id: "3", title: "Querying ECS Resources", status: "running" },
-  { id: "4", title: "Generating Report", status: "pending" },
-];
-
-const mockLogs: LogEntry[] = [
-  { id: "1", type: "info", message: "Starting analysis...", timestamp: "14:32:01" },
-  { id: "2", type: "success", message: "Cost optimization agent required", timestamp: "14:32:02" },
-  { id: "3", type: "info", message: "Fetching ECS instance list...", timestamp: "14:32:03" },
-  { id: "4", type: "success", message: "12 active instances found", timestamp: "14:32:05" },
-  { id: "5", type: "info", message: "Retrieving billing data...", timestamp: "14:32:06" },
-];
 
 const knowledgeBases = [
   { id: "kb1", name: "Operation Manual" },
@@ -55,23 +46,50 @@ export default function ChatPage() {
   const [showSkillDropdown, setShowSkillDropdown] = React.useState(false);
   const [selectedKb, setSelectedKb] = React.useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+  
+  // Real chat state
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [currentConversationId, setCurrentConversationId] = React.useState<string | null>(null);
   const [isRunning, setIsRunning] = React.useState(false);
+  const [logs, setLogs] = React.useState<LogEntry[]>([]);
+  const [steps, setSteps] = React.useState<Step[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-    setIsRunning(true);
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, logs]);
+
+  const addLog = (type: LogEntry["type"], message: string) => {
+    const now = new Date();
+    const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    setLogs(prev => [...prev, { id: Date.now().toString(), type, message, timestamp }]);
+  };
+
+  const updateStep = (id: string, status: Step["status"]) => {
+    setSteps(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+  };
+
+  const resetExecutionState = () => {
+    setLogs([]);
+    setSteps([
+      { id: "1", title: "Understanding Intent", status: "pending" },
+      { id: "2", title: "Selecting Agent", status: "pending" },
+      { id: "3", title: "Processing Request", status: "pending" },
+      { id: "4", title: "Generating Response", status: "pending" },
+    ]);
   };
 
   const toggleKb = (id: string) => {
-    setSelectedKb((prev) =>
-      prev.includes(id) ? prev.filter((kb) => kb !== id) : [...prev, id]
+    setSelectedKb(prev =>
+      prev.includes(id) ? prev.filter(kb => kb !== id) : [...prev, id]
     );
   };
 
   const toggleSkill = (id: string) => {
-    setSelectedSkills((prev) =>
-      prev.includes(id) ? prev.filter((sk) => sk !== id) : [...prev, id]
+    setSelectedSkills(prev =>
+      prev.includes(id) ? prev.filter(sk => sk !== id) : [...prev, sk]
     );
   };
 
@@ -87,24 +105,162 @@ export default function ChatPage() {
     return `${selectedSkills.length} selected`;
   };
 
+  const sendMessage = async () => {
+    if (!input.trim() || isRunning) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    setIsRunning(true);
+    setError(null);
+    resetExecutionState();
+
+    // Add user message
+    const newUserMessage: Message = { role: "user", content: userMessage };
+    setMessages(prev => [...prev, newUserMessage]);
+
+    // Update steps
+    updateStep("1", "running");
+    addLog("info", "Processing user request...");
+    
+    await new Promise(r => setTimeout(r, 500));
+    updateStep("1", "completed");
+    updateStep("2", "running");
+    addLog("info", "Selecting appropriate agent...");
+
+    await new Promise(r => setTimeout(r, 500));
+    updateStep("2", "completed");
+    updateStep("3", "running");
+    addLog("info", "Sending request to AI model...");
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          conversation_id: currentConversationId,
+          knowledge_bases: selectedKb,
+          skills: selectedSkills
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Failed to get response");
+      }
+
+      const data = await res.json();
+      
+      updateStep("3", "completed");
+      updateStep("4", "running");
+      addLog("success", "Response received successfully");
+
+      const assistantMessage: Message = { role: "assistant", content: data.message };
+      setMessages(prev => [...prev, assistantMessage]);
+
+      if (!currentConversationId) {
+        setCurrentConversationId(data.conversation_id);
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+      updateStep("4", "completed");
+      addLog("success", "Task completed");
+
+    } catch (err: any) {
+      setError(err.message || "Failed to send message");
+      addLog("error", err.message || "Request failed");
+      updateStep("3", "error");
+      setMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   return (
     <div className="flex h-full">
+      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white">
         <div className="flex-1 overflow-y-auto p-4">
           <div className="max-w-none mx-auto space-y-6">
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-manulife-green flex items-center justify-center mx-auto mb-4">
-                <span className="text-white text-2xl font-bold">AI</span>
+            {messages.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-manulife-green flex items-center justify-center mx-auto mb-4">
+                  <span className="text-white text-2xl font-bold">AI</span>
+                </div>
+                <h1 className="text-2xl font-semibold text-gray-900 mb-2">AliCloud Agent Hub</h1>
+                <p className="text-manulife-grey">Select actions or start conversation</p>
               </div>
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">AliCloud Agent Hub</h1>
-              <p className="text-manulife-grey">Select actions or start conversation</p>
-            </div>
+            ) : (
+              <div className="space-y-6">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className={cn(
+                    "flex gap-3",
+                    msg.role === "user" && "flex-row-reverse"
+                  )}>
+                    <div className={cn(
+                      "w-10 h-10 flex items-center justify-center shrink-0",
+                      msg.role === "user" ? "bg-manulife-green" : "bg-manulife-lightGrey"
+                    )}>
+                      {msg.role === "user" ? (
+                        <span className="text-white text-sm font-medium">U</span>
+                      ) : (
+                        <span className="text-manulife-green text-sm font-medium">AI</span>
+                      )}
+                    </div>
+                    <div className={cn(
+                      "flex-1 max-w-3xl",
+                      msg.role === "user" && "text-right"
+                    )}>
+                      <div className={cn(
+                        "inline-block p-4 rounded text-sm",
+                        msg.role === "user"
+                          ? "bg-manulife-green text-white"
+                          : "bg-manulife-lightGreyBg text-gray-900"
+                      )}>
+                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isRunning && (
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 flex items-center justify-center shrink-0 bg-manulife-lightGrey">
+                      <Bot className="w-5 h-5 text-manulife-green" />
+                    </div>
+                    <div className="flex-1 max-w-3xl">
+                      <div className="inline-block p-4 rounded bg-manulife-lightGreyBg">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-manulife-green rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <div className="w-2 h-2 bg-manulife-green rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <div className="w-2 h-2 bg-manulife-green rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm">
+                    {error}
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Input Area */}
         <div className="p-4 border-t border-manulife-lightGrey">
           <div className="max-w-none mx-auto">
             <div className="flex gap-3 mb-3 flex-wrap">
+              {/* Knowledge Base Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowKbDropdown(!showKbDropdown)}
@@ -140,6 +296,7 @@ export default function ChatPage() {
                 )}
               </div>
 
+              {/* Skills Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowSkillDropdown(!showSkillDropdown)}
@@ -176,46 +333,56 @@ export default function ChatPage() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="relative">
+            {/* Input Form */}
+            <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="relative">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Enter your request..."
+                onKeyDown={handleKeyDown}
+                placeholder={isRunning ? "等待回复中..." : "输入你的请求..."}
+                disabled={isRunning}
                 className="w-full resize-none border-manulife-lightGrey focus:border-manulife-green focus:ring-1 focus:ring-manulife-green py-3 px-4 pr-12"
                 rows={1}
               />
               <Button
                 type="submit"
                 size="icon"
+                disabled={isRunning || !input.trim()}
                 className="absolute right-2 bottom-2 bg-manulife-green hover:bg-manulife-green/90 text-white"
               >
-                <Send className="w-4 h-4" />
+                {isRunning ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </Button>
             </form>
           </div>
         </div>
       </div>
 
+      {/* Execution Panel */}
       <div className="w-80 border-l border-manulife-lightGrey bg-manulife-lightGreyBg flex flex-col">
         <div className="p-4 border-b border-manulife-lightGrey bg-white">
           <h2 className="font-semibold text-gray-900">Agent Execution</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Task Breakdown */}
           <div className="bg-white border border-manulife-lightGrey p-4">
             <h3 className="text-sm font-medium text-gray-900 mb-3">Task Breakdown</h3>
             <div className="space-y-2">
-              {mockSteps.map((step) => (
+              {steps.map((step) => (
                 <div key={step.id} className="flex items-center gap-2">
                   <div
                     className={cn(
                       "w-4 h-4 flex items-center justify-center",
                       step.status === "completed"
-                        ? "bg-alert-success-border"
+                        ? "bg-manulife-green"
                         : step.status === "running"
                         ? "bg-amber-500 animate-pulse"
                         : step.status === "error"
-                        ? "bg-alert-error-border"
+                        ? "bg-red-500"
                         : "bg-manulife-lightGrey"
                     )}
                   >
@@ -227,9 +394,11 @@ export default function ChatPage() {
                     className={cn(
                       "text-sm",
                       step.status === "completed"
-                        ? "text-alert-success-text"
+                        ? "text-manulife-green"
                         : step.status === "running"
                         ? "text-amber-700"
+                        : step.status === "error"
+                        ? "text-red-700"
                         : "text-manulife-grey"
                     )}
                   >
@@ -240,35 +409,54 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* Real-time Logs */}
           <div className="bg-white border border-manulife-lightGrey p-4">
             <h3 className="text-sm font-medium text-gray-900 mb-3">Real-time Logs</h3>
             <div className="space-y-1.5 font-mono text-xs">
-              {mockLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className={cn(
-                    "flex items-start gap-2 py-1 px-2",
-                    log.type === "info" && "bg-alert-info-bg border-l-2 border-alert-info-border",
-                    log.type === "success" && "bg-alert-success-bg border-l-2 border-alert-success-border",
-                    log.type === "warning" && "bg-alert-warning-bg border-l-2 border-alert-warning-border",
-                    log.type === "error" && "bg-alert-error-bg border-l-2 border-alert-error-border"
-                  )}
-                >
-                  <span className="text-manulife-grey shrink-0">[{log.timestamp}]</span>
-                  <span className={cn(
-                    log.type === "info" && "text-alert-info-text",
-                    log.type === "success" && "text-alert-success-text",
-                    log.type === "warning" && "text-alert-warning-text",
-                    log.type === "error" && "text-alert-error-text"
-                  )}>
-                    {log.message}
-                  </span>
+              {logs.length === 0 ? (
+                <div className="text-manulife-grey text-center py-4">
+                  No logs yet. Start a conversation to see execution logs.
                 </div>
-              ))}
+              ) : (
+                logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className={cn(
+                      "flex items-start gap-2 py-1 px-2",
+                      log.type === "info" && "bg-blue-50 border-l-2 border-blue-500",
+                      log.type === "success" && "bg-green-50 border-l-2 border-green-500",
+                      log.type === "warning" && "bg-yellow-50 border-l-2 border-yellow-500",
+                      log.type === "error" && "bg-red-50 border-l-2 border-red-500"
+                    )}
+                  >
+                    <span className="text-manulife-grey shrink-0">[{log.timestamp}]</span>
+                    <span className={cn(
+                      log.type === "info" && "text-blue-700",
+                      log.type === "success" && "text-green-700",
+                      log.type === "warning" && "text-yellow-700",
+                      log.type === "error" && "text-red-700"
+                    )}>
+                      {log.message}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function Bot({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 8V4H8" />
+      <rect x="4" y="8" width="16" height="12" rx="2" />
+      <circle cx="8.5" cy="14.5" r="1.5" fill="currentColor" />
+      <circle cx="15.5" cy="14.5" r="1.5" fill="currentColor" />
+      <path d="M8 12h8" />
+    </svg>
   );
 }
