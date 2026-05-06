@@ -3,7 +3,7 @@
 import * as React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, Paperclip, Puzzle, ChevronDown, Loader2, Brain, Bot, Check, AlertCircle, Clock, Activity } from "lucide-react";
+import { Send, Paperclip, ChevronDown, Loader2, Brain, Bot, Check, AlertCircle, Clock, Activity, ChevronRight, ChevronDown as ChevronDownIcon, Puzzle, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +11,179 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MemoryPanel } from "@/components/chat/memory-panel";
 import { CodeBlock } from "@/components/chat/code-block";
+import { useSearchParams } from "next/navigation";
+
+interface ThinkingContentProps {
+  content: string;
+  isStreaming?: boolean;
+}
+
+const ThinkingContent: React.FC<ThinkingContentProps> = ({ content, isStreaming }) => {
+  const [isExpanded, setIsExpanded] = React.useState(true);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (isStreaming && contentRef.current) {
+      contentRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [content, isStreaming]);
+
+  return (
+    <div className="my-3 rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 overflow-hidden shadow-sm">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-purple-100/50 transition-colors duration-200"
+      >
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100">
+          <Brain className="w-3.5 h-3.5 text-purple-600" />
+        </div>
+        <span className="text-sm font-semibold text-purple-700">
+          {isExpanded ? "Hide thinking" : "Show thinking"}
+        </span>
+        <div className="ml-auto">
+          {isExpanded ? (
+            <ChevronDownIcon className="w-4 h-4 text-purple-500 transition-transform duration-200" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-purple-500 transition-transform duration-200" />
+          )}
+        </div>
+      </button>
+      
+      {isExpanded && (
+        <div ref={contentRef} className="px-4 pb-4 border-t border-purple-100">
+          <div className="mt-3 text-sm text-purple-800 whitespace-pre-wrap leading-relaxed">
+            {content}
+            {isStreaming && (
+              <span className="inline-block w-2 h-4 bg-purple-500 ml-1 animate-pulse" />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface MessageWithThinkingProps {
+  content: string;
+  isStreaming?: boolean;
+}
+
+const MessageWithThinking: React.FC<MessageWithThinkingProps> = ({ content, isStreaming }) => {
+  const thinkingRegex = /\[THINKING\]([\s\S]*?)\[\/THINKING\]/g;
+  const parts: Array<{ type: "thinking" | "content"; content: string }> = [];
+  
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = thinkingRegex.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "content", content: content.slice(lastIndex, match.index) });
+    }
+    parts.push({ type: "thinking", content: match[1] });
+    lastIndex = match.index + match[0].length;
+  }
+  
+  if (lastIndex < content.length) {
+    parts.push({ type: "content", content: content.slice(lastIndex) });
+  }
+  
+  if (parts.length === 0) {
+    parts.push({ type: "content", content });
+  }
+
+  return (
+    <div className="space-y-2">
+      {parts.map((part, index) => {
+        if (part.type === "thinking") {
+          return (
+            <ThinkingContent
+              key={index}
+              content={part.content}
+              isStreaming={isStreaming && index === parts.length - 1}
+            />
+          );
+        }
+        
+        return (
+          <div key={index} className="markdown-body select-text">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code({node, className, children, ...props}: any) {
+                  const match = /language-(\w+)/.exec(className || '');
+                  const isInlineCode = !match && !className;
+
+                  if (isInlineCode) {
+                    return (
+                      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                        {children}
+                      </code>
+                    );
+                  }
+
+                  return (
+                    <CodeBlock
+                      code={String(children).replace(/\n$/, '')}
+                      language={match ? match[1] : ''}
+                      className="my-3"
+                    />
+                  );
+                },
+                p({children}) {
+                  return <p className="whitespace-pre-wrap leading-relaxed mb-2 last:mb-0">{children}</p>;
+                },
+                h1({children}) {
+                  return <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>;
+                },
+                h2({children}) {
+                  return <h2 className="text-xl font-semibold mt-3 mb-2">{children}</h2>;
+                },
+                h3({children}) {
+                  return <h3 className="text-lg font-semibold mt-3 mb-1">{children}</h3>;
+                },
+                ul({children}) {
+                  return <ul className="list-disc ml-4 space-y-1">{children}</ul>;
+                },
+                ol({children}) {
+                  return <ol className="list-decimal ml-4 space-y-1">{children}</ol>;
+                },
+                li({children}) {
+                  return <li className="ml-4">{children}</li>;
+                },
+                strong({children}) {
+                  return <strong className="font-semibold">{children}</strong>;
+                },
+                em({children}) {
+                  return <em className="italic">{children}</em>;
+                },
+                blockquote({children}) {
+                  return <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">{children}</blockquote>;
+                },
+                table({children}) {
+                  return (
+                    <div className="overflow-x-auto my-4 select-text">
+                      <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                        {children}
+                      </table>
+                    </div>
+                  );
+                },
+                th({children}) {
+                  return <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 bg-gray-50 select-text">{children}</th>;
+                },
+                td({children}) {
+                  return <td className="px-4 py-2 text-sm text-gray-900 border-r border-gray-100 last:border-r-0 select-text">{children}</td>;
+                },
+              }}
+            >
+              {part.content}
+            </ReactMarkdown>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -25,6 +198,13 @@ interface LogEntry {
   timestamp: string;
 }
 
+interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  allowed_tools: string[];
+}
+
 interface Step {
   id: string;
   title: string;
@@ -37,19 +217,17 @@ const knowledgeBases = [
   { id: "kb3", name: "Architecture Docs" },
 ];
 
-const skills = [
-  { id: "sk1", name: "Resource Query" },
-  { id: "sk2", name: "Cost Analysis" },
-  { id: "sk3", name: "Report Generation" },
-  { id: "sk4", name: "FC Function Call" },
-];
-
 export default function ChatPage() {
+  const searchParams = useSearchParams();
+  const conversationId = searchParams.get("conversation");
+
   const [input, setInput] = React.useState("");
   const [showKbDropdown, setShowKbDropdown] = React.useState(false);
-  const [showSkillDropdown, setShowSkillDropdown] = React.useState(false);
   const [selectedKb, setSelectedKb] = React.useState<string[]>([]);
-  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+
+  const [skills, setSkills] = React.useState<Skill[]>([]);
+  const [selectedSkill, setSelectedSkill] = React.useState<string | null>(null);
+  const [showSkillDropdown, setShowSkillDropdown] = React.useState(false);
 
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [currentConversationId, setCurrentConversationId] = React.useState<string | null>(null);
@@ -59,6 +237,7 @@ export default function ChatPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [showMemoryPanel, setShowMemoryPanel] = React.useState(false);
   const [showExecutionPanel, setShowExecutionPanel] = React.useState(true);
+  const [lastUserMessage, setLastUserMessage] = React.useState<string>("");
 
   const [logs, setLogs] = React.useState<LogEntry[]>([]);
   const [steps, setSteps] = React.useState<Step[]>([
@@ -71,6 +250,7 @@ export default function ChatPage() {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const logsEndRef = React.useRef<HTMLDivElement>(null);
   const streamingContentRef = React.useRef<HTMLDivElement>(null);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
 
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -81,11 +261,27 @@ export default function ChatPage() {
   }, [logs]);
 
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const convId = params.get("conversation");
-    if (convId) {
-      loadConversation(convId);
+    if (conversationId) {
+      loadConversation(conversationId);
+    } else {
+      setMessages([]);
+      setCurrentConversationId(null);
     }
+  }, [conversationId]);
+
+  React.useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        const res = await fetch("/api/skills/list");
+        if (res.ok) {
+          const data = await res.json();
+          setSkills(data.skills || []);
+        }
+      } catch (error) {
+        console.error("Failed to load skills:", error);
+      }
+    };
+    loadSkills();
   }, []);
 
   const loadConversation = async (convId: string) => {
@@ -127,109 +323,44 @@ export default function ChatPage() {
     );
   };
 
-  const toggleSkill = (id: string) => {
-    setSelectedSkills(prev =>
-      prev.includes(id) ? prev.filter(sk => sk !== id) : [...prev, sk]
-    );
-  };
-
   const getSelectedKbNames = () => {
     if (selectedKb.length === 0) return "Select Knowledge Base";
     if (selectedKb.length === 1) return knowledgeBases.find(kb => kb.id === selectedKb[0])?.name;
     return `${selectedKb.length} selected`;
   };
 
-  const getSelectedSkillNames = () => {
-    if (selectedSkills.length === 0) return "Auto Select Skills";
-    if (selectedSkills.length === 1) return skills.find(sk => sk.id === selectedSkills[0])?.name;
-    return `${selectedSkills.length} selected`;
+  const getSelectedSkillName = () => {
+    if (!selectedSkill) return "Select Skill (Optional)";
+    const skill = skills.find(s => s.id === selectedSkill);
+    return skill ? skill.name : "Select Skill (Optional)";
   };
 
-  const renderMessageContent = (content: string) => {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        code({node, className, children, ...props}: any) {
-          const match = /language-(\w+)/.exec(className || '');
-          const isInlineCode = !match && !className;
+  const handleSelectSkill = (skillId: string | null) => {
+    setSelectedSkill(skillId);
+    setShowSkillDropdown(false);
+  };
 
-          if (isInlineCode) {
-            return (
-              <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
-                {children}
-              </code>
-            );
-          }
+  const stopStreaming = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsStreaming(false);
+      setShowStreamingContainer(false);
+      addLog("warning", "Response generation stopped by user");
+    }
+  };
 
-          return (
-            <CodeBlock
-              code={String(children).replace(/\n$/, '')}
-              language={match ? match[1] : ''}
-              className="my-3"
-            />
-          );
-        },
-        p({children}) {
-          return <p className="whitespace-pre-wrap leading-relaxed mb-2 last:mb-0">{children}</p>;
-        },
-        h1({children}) {
-          return <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>;
-        },
-        h2({children}) {
-          return <h2 className="text-xl font-semibold mt-3 mb-2">{children}</h2>;
-        },
-        h3({children}) {
-          return <h3 className="text-lg font-semibold mt-3 mb-1">{children}</h3>;
-        },
-        ul({children}) {
-          return <ul className="list-disc ml-4 space-y-1">{children}</ul>;
-        },
-        ol({children}) {
-          return <ol className="list-decimal ml-4 space-y-1">{children}</ol>;
-        },
-        li({children}) {
-          return <li className="ml-4">{children}</li>;
-        },
-        strong({children}) {
-          return <strong className="font-semibold">{children}</strong>;
-        },
-        em({children}) {
-          return <em className="italic">{children}</em>;
-        },
-        blockquote({children}) {
-          return <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-2">{children}</blockquote>;
-        },
-        table({children}) {
-          return (
-            <div className="overflow-x-auto my-4">
-              <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                {children}
-              </table>
-            </div>
-          );
-        },
-        thead({children}) {
-          return <thead className="bg-gray-50">{children}</thead>;
-        },
-        tbody({children}) {
-          return <tbody className="divide-y divide-gray-200">{children}</tbody>;
-        },
-        tr({children}) {
-          return <tr className="hover:bg-gray-50">{children}</tr>;
-        },
-        th({children}) {
-          return <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">{children}</th>;
-        },
-        td({children}) {
-          return <td className="px-4 py-2 text-sm text-gray-900 border-r border-gray-100 last:border-r-0">{children}</td>;
-        },
-      }}
-    >
-      {content}
-    </ReactMarkdown>
-  );
-};
+  const retryMessage = (content: string) => {
+    setInput(content);
+    setLastUserMessage(content);
+    const textarea = document.querySelector("textarea");
+    if (textarea) {
+      textarea.focus();
+    }
+  };
+
+  const renderMessageContent = (content: string, isStreaming: boolean = false) => {
+    return <MessageWithThinking content={content} isStreaming={isStreaming} />;
+  };
 
   const renderMarkdownToHtml = (content: string): string => {
     let result = content;
@@ -278,6 +409,8 @@ export default function ChatPage() {
     setShowStreamingContainer(true);
     resetExecutionState();
 
+    abortControllerRef.current = new AbortController();
+
     const newUserMessage: Message = { role: "user", content: userMessage };
     setMessages(prev => [...prev, newUserMessage]);
 
@@ -302,8 +435,9 @@ export default function ChatPage() {
           message: userMessage,
           conversation_id: currentConversationId,
           knowledge_bases: selectedKb,
-          skills: selectedSkills
-        })
+          skill_id: selectedSkill
+        }),
+        signal: abortControllerRef.current.signal
       });
 
       if (!res.ok) {
@@ -345,10 +479,7 @@ export default function ChatPage() {
                 }
               } else if (json.token) {
                 fullResponse += json.token;
-                if (streamingContentRef.current) {
-                  streamingContentRef.current.innerHTML = renderMarkdownToHtml(fullResponse);
-                  streamingContentRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-                }
+                setStreamedContent(fullResponse);
               }
             } catch (e) {
               parseErrorCount++;
@@ -361,10 +492,6 @@ export default function ChatPage() {
             }
           }
         }
-      }
-
-      if (streamingContentRef.current) {
-        streamingContentRef.current.innerHTML = renderMarkdownToHtml(fullResponse);
       }
 
       const assistantMessage: Message = { role: "assistant", content: fullResponse };
@@ -480,13 +607,17 @@ export default function ChatPage() {
                       "flex-1 max-w-3xl",
                       msg.role === "user" && "text-right"
                     )}>
-                      <div className={cn(
-                        "inline-block p-4 rounded-lg text-sm",
-                        msg.role === "user"
-                          ? "bg-manulife-green text-white"
-                          : "bg-manulife-lightGreyBg text-gray-900"
-                      )}>
-                        {renderMessageContent(msg.content)}
+                      <div
+                        className={cn(
+                          "inline-block p-4 rounded-lg text-sm cursor-pointer transition-opacity",
+                          msg.role === "user"
+                            ? "bg-manulife-green text-white hover:opacity-90"
+                            : "bg-manulife-lightGreyBg text-gray-900"
+                        )}
+                        onClick={() => msg.role === "user" && !isStreaming && retryMessage(msg.content)}
+                        title={msg.role === "user" ? "Click to retry" : undefined}
+                      >
+                        {renderMessageContent(msg.content, false)}
                       </div>
                     </div>
                   </div>
@@ -499,11 +630,19 @@ export default function ChatPage() {
                     </div>
                     <div className="flex-1 max-w-3xl">
                       <div className="inline-block p-4 rounded-lg bg-manulife-lightGreyBg text-gray-900 max-w-none">
-                        <div
-                          ref={streamingContentRef}
-                          className="markdown-content"
-                        />
-                        <span className="inline-block w-2 h-4 bg-manulife-green ml-1 animate-pulse" />
+                        {renderMessageContent(streamedContent, true)}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={stopStreaming}
+                          className="h-7 text-xs text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <Square className="w-3 h-3 mr-1" />
+                          Stop
+                        </Button>
+                        <span className="text-xs text-manulife-grey">Click to interrupt generation</span>
                       </div>
                     </div>
                   </div>
@@ -535,65 +674,82 @@ export default function ChatPage() {
                 </button>
 
                 {showKbDropdown && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowKbDropdown(false)}
-                    />
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-manulife-lightGrey z-50 p-2">
-                      {knowledgeBases.map((kb) => (
-                        <div
-                          key={kb.id}
-                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-manulife-lightGreyBg cursor-pointer"
-                          onClick={() => toggleKb(kb.id)}
-                        >
-                          <Checkbox
-                            checked={selectedKb.includes(kb.id)}
-                            onCheckedChange={() => toggleKb(kb.id)}
-                          />
-                          <span className="text-sm text-manulife-grey">{kb.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowKbDropdown(false)}
+                      />
+                      <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-manulife-lightGrey z-50 p-2">
+                        {knowledgeBases.map((kb) => (
+                          <div
+                            key={kb.id}
+                            className="flex items-center gap-2 px-2 py-1.5 hover:bg-manulife-lightGreyBg cursor-pointer"
+                            onClick={() => toggleKb(kb.id)}
+                          >
+                            <Checkbox
+                              checked={selectedKb.includes(kb.id)}
+                              onCheckedChange={() => toggleKb(kb.id)}
+                            />
+                            <span className="text-sm text-manulife-grey">{kb.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
 
-              <div className="relative">
-                <button
-                  onClick={() => setShowSkillDropdown(!showSkillDropdown)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm border border-manulife-lightGrey bg-white hover:bg-manulife-lightGreyBg text-manulife-grey"
-                >
-                  <Puzzle className="w-3.5 h-3.5" />
-                  <span>{getSelectedSkillNames()}</span>
-                  <ChevronDown className="w-3.5 h-3.5 ml-1" />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSkillDropdown(!showSkillDropdown)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-1.5 text-sm border bg-white hover:bg-manulife-lightGreyBg",
+                      selectedSkill
+                        ? "border-manulife-green text-manulife-green"
+                        : "border-manulife-lightGrey text-manulife-grey"
+                    )}
+                  >
+                    <Puzzle className="w-3.5 h-3.5" />
+                    <span>{getSelectedSkillName()}</span>
+                    <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                  </button>
 
-                {showSkillDropdown && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setShowSkillDropdown(false)}
-                    />
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-manulife-lightGrey z-50 p-2">
-                      {skills.map((skill) => (
+                  {showSkillDropdown && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowSkillDropdown(false)}
+                      />
+                      <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-manulife-lightGrey z-50 p-2 max-h-64 overflow-y-auto">
                         <div
-                          key={skill.id}
-                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-manulife-lightGreyBg cursor-pointer"
-                          onClick={() => toggleSkill(skill.id)}
+                          className="flex items-center gap-2 px-2 py-1.5 hover:bg-manulife-lightGreyBg cursor-pointer rounded"
+                          onClick={() => handleSelectSkill(null)}
                         >
-                          <Checkbox
-                            checked={selectedSkills.includes(skill.id)}
-                            onCheckedChange={() => toggleSkill(skill.id)}
-                          />
-                          <span className="text-sm text-manulife-grey">{skill.name}</span>
+                          <span className="text-sm text-manulife-grey">No Skill (Auto-select)</span>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                )}
+                        {skills.map((skill) => (
+                          <div
+                            key={skill.id}
+                            className={cn(
+                              "px-2 py-2 hover:bg-manulife-lightGreyBg cursor-pointer rounded",
+                              selectedSkill === skill.id && "bg-manulife-green/10"
+                            )}
+                            onClick={() => handleSelectSkill(skill.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-manulife-grey">{skill.name}</span>
+                              {selectedSkill === skill.id && (
+                                <Check className="w-4 h-4 text-manulife-green" />
+                              )}
+                            </div>
+                            <p className="text-xs text-manulife-grey mt-0.5 line-clamp-2">{skill.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
               </div>
-            </div>
 
             <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="relative">
               <Textarea
