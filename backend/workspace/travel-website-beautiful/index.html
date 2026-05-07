@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✈️ Wanderlust - 探索世界的每一个角落</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            transition: var(--transition);
+        }
+
+        .navbar.scrolled {
+            padding: 0.75rem 2rem;
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            font-size: 1rem;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
+        }
+
+        /* 首页横幅 */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 8rem 2rem 4rem;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(139, 92, 246, 0.85) 100%);
+            z-index: 1;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('https://images.unsplash.com/photo-1476820865390-c52aeebb9891?w=1920&q=80') center/cover;
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .hero-content {
+            max-width: 800px;
+            text-align: center;
+            color: white;
+            z-index: 2;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #fff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .search-container {
+            background: white;
+            border-radius: 60px;
+            padding: 0.75rem;
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            gap: 0.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-container input {
+            flex: 1;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 50px;
+            outline: none;
+        }
+
+        .search-container input::placeholder {
+            color: var(--gray-600);
+        }
+
+        .search-container button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 0 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .search-container button:hover {
+            transform: scale(1.05);
+        }
+
+        .floating-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .shape:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            top: 20%;
+            left: 10%;
+            background: white;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            top: 60%;
+            right: 15%;
+            background: white;
+            animation-delay: 5s;
+        }
+
+        .shape:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 25%;
+            background: white;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-30px) rotate(180deg);
+            }
+        }
+
+        /* 热门目的地 */
+        .section {
+            padding: 6rem 2rem;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 2px;
+        }
+
+        .section-title p {
+            color: var(--gray-600);
+            font-size: 1.1rem;
+            margin-top: 1.5rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .destinations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .destination-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .destination-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .destination-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.7) 100%);
+            z-index: 1;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .destination-card:hover::before {
+            opacity: 1;
+        }
+
+        .destination-img {
+            height: 280px;
+            width: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .destination-card:hover .destination-img {
+            transform: scale(1.1);
+        }
+
+        .destination-info {
+            padding: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .destination-info h3 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .destination-card:hover .destination-info h3 {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .destination-info p {
+            color: rgba(255, 255, 255, 0.9);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+            transition-delay: 0.1s;
+        }
+
+        .destination-card:hover .destination-info p {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .destination-price {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+            transition-delay: 0.2s;
+        }
+
+        .destination-card:hover .destination-price {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .destination-price span {
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+
+        .destination-price .btn-small {
+            background: var(--accent);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* 旅行套餐 */
+        .packages {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%);
+        }
+
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .package-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+        }
+
+        .package-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            z-index: -1;
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .package-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .package-card:hover::before {
+            opacity: 0.1;
+        }
+
+        .package-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .package-card:nth-child(2) .package-icon {
+            background: linear-gradient(135deg, var(--accent), #f43f5e);
+        }
+
+        .package-card:nth-child(3) .package-icon {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .package-card h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .package-card p {
+            color: var(--gray-600);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .package-features {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .package-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .package-features li:last-child {
+            border-bottom: none;
+        }
+
+        .package-features li i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .package-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .package-price span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--gray-600);
+        }
+
+        /* 统计数据 */
+        .stats {
+            background: linear-gradient(135deg, var(--dark), #0f172a);
+            color: white;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stat-item {
+            padding: 2rem;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* 联系我们 */
+        .contact {
+            background: white;
+        }
+
+        .contact-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 4rem;
+        }
+
+        .contact-info h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--dark);
+        }
+
+        .contact-details {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        .contact-details li {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .contact-details li i {
+            color: var(--primary);
+            font-size: 1.2rem;
+            width: 30px;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .social-links a {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .social-links a:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .contact-form .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .contact-form input,
+        .contact-form textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: var(--transition);
+            outline: none;
+        }
+
+        .contact-form input:focus,
+        .contact-form textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .contact-form textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 3rem;
+        }
+
+        .footer-section h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.75rem;
+        }
+
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: var(--transition);
+            display: block;
+            padding: 0.5rem 0;
+        }
+
+        .footer-links a:hover {
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .footer-links a i {
+            margin-right: 0.75rem;
+            color: var(--primary);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 3rem;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section {
+                padding: 4rem 1rem;
+            }
+
+            .section-title h2 {
+                font-size: 2rem;
+            }
+
+            .search-container {
+                flex-direction: column;
+            }
+
+            .search-container input,
+            .search-container button {
+                width: 100%;
+            }
+
+            .contact-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .nav-buttons {
+                gap: 0.5rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.85rem;
+            }
+
+            .packages-grid,
+            .destinations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 动画效果 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .fade-in.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="#" class="logo">
+                <i class="fas fa-plane"></i>
+                <span>Wanderlust</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#home">🏠 首页</a></li>
+                <li><a href="#destinations">🌍 目的地</a></li>
+                <li><a href="#packages">🎒 套餐</a></li>
+                <li><a href="#about">ℹ️ 关于</a></li>
+                <li><a href="#contact">📞 联系</a></li>
+            </ul>
+            <div class="nav-buttons">
+                <a href="#" class="btn btn-outline">
+                    <i class="fas fa-user"></i> 登录
+                </a>
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> 注册
+                </a>
+            </div>
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 首页横幅 -->
+    <section class="hero" id="home">
+        <div class="floating-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+        <div class="hero-content">
+            <h1>探索世界的每一个角落</h1>
+            <p>发现最美的风景，体验最独特的文化，创造最难忘的回忆。与Wanderlust一起，开启你的梦想之旅。</p>
+            <div class="search-container">
+                <input type="text" placeholder="🔍 想去哪里旅行？输入目的地..." />
+                <button>
+                    <i class="fas fa-search"></i> 搜索
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 热门目的地 -->
+    <section class="section" id="destinations">
+        <div class="section-title">
+            <h2>✨ 热门目的地</h2>
+            <p>精选全球最受欢迎的旅行目的地，满足你的探索欲望</p>
+        </div>
+        <div class="destinations-grid">
+            <div class="destination-card fade-in">
+                <img src="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80" alt="巴黎" class="destination-img">
+                <div class="destination-info">
+                    <h3>🇫🇷 巴黎，法国</h3>
+                    <p>浪漫之都，艺术与时尚的完美结合</p>
+                    <div class="destination-price">
+                        <span>¥2,999 起</span>
+                        <a href="#" class="btn-small">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            <div class="destination-card fade-in">
+                <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80" alt="东京" class="destination-img">
+                <div class="destination-info">
+                    <h3>🇯🇵 东京，日本</h3>
+                    <p>传统与现代交融的东方魅力之都</p>
+                    <div class="destination-price">
+                        <span>¥3,499 起</span>
+                        <a href="#" class="btn-small">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            <div class="destination-card fade-in">
+                <img src="https://images.unsplash.com/photo-1537996194481-7bb9f1f0b5e8?w=600&q=80" alt="巴厘岛" class="destination-img">
+                <div class="destination-info">
+                    <h3>🇮🇩 巴厘岛，印尼</h3>
+                    <p>天堂般的海岛度假胜地</p>
+                    <div class="destination-price">
+                        <span>¥2,599 起</span>
+                        <a href="#" class="btn-small">查看详情</a>
+                    </div>
+                </div>
+            </div>
+            <div class="destination-card fade-in">
+                <img src="https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80" alt="罗马" class="destination-img">
+                <div class="destination-info">
+                    <h3>🇮🇹 罗马，意大利</h3>
+                    <p>永恒之城，历史与文化的瑰宝</p>
+                    <div class="destination-price">
+                        <span>¥3,899 起</span>
+                        <a href="#" class="btn-small">查看详情</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 旅行套餐 -->
+    <section class="section packages" id="packages">
+        <div class="section-title">
+            <h2>🎯 精选旅行套餐</h2>
+            <p>量身定制的旅行方案，让您的旅程更加完美</p>
+        </div>
+        <div class="packages-grid">
+            <div class="package-card fade-in">
+                <div class="package-icon">
+                    <i class="fas fa-umbrella-beach"></i>
+                </div>
+                <h3>🏝️ 海岛度假套餐</h3>
+                <p>享受阳光沙滩，体验水上运动，放松身心的完美选择。</p>
+                <ul class="package-features">
+                    <li><i class="fas fa-check-circle"></i> 5天4晚豪华酒店住宿</li>
+                    <li><i class="fas fa-check-circle"></i> 每日自助早餐+3顿特色晚餐</li>
+                    <li><i class="fas fa-check-circle"></i> 浮潜+深潜体验</li>
+                    <li><i class="fas fa-check-circle"></i> 机场接送服务</li>
+                </ul>
+                <div class="package-price">
+                    ¥4,999 <span>/人</span>
+                </div>
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart"></i> 立即预订
+                </a>
+            </div>
+            <div class="package-card fade-in">
+                <div class="package-icon">
+                    <i class="fas fa-mountain"></i>
+                </div>
+                <h3>🏔️ 雪山探险套餐</h3>
+                <p>挑战自我，征服高峰，体验极限运动的刺激与快感。</p>
+                <ul class="package-features">
+                    <li><i class="fas fa-check-circle"></i> 专业登山向导陪同</li>
+                    <li><i class="fas fa-check-circle"></i> 高山营地住宿3晚</li>
+                    <li><i class="fas fa-check-circle"></i> 全套登山装备租赁</li>
+                    <li><i class="fas fa-check-circle"></i> 高原保险+紧急救援</li>
+                </ul>
+                <div class="package-price">
+                    ¥6,888 <span>/人</span>
+                </div>
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart"></i> 立即预订
+                </a>
+            </div>
+            <div class="package-card fade-in">
+                <div class="package-icon">
+                    <i class="fas fa-monument"></i>
+                </div>
+                <h3>🏛️ 文化之旅套餐</h3>
+                <p>探访历史遗迹，感受古老文明，深入了解当地文化。</p>
+                <ul class="package-features">
+                    <li><i class="fas fa-check-circle"></i> 7天6晚精品酒店</li>
+                    <li><i class="fas fa-check-circle"></i> 专业文化讲解员</li>
+                    <li><i class="fas fa-check-circle"></i> 8大世界遗产景点</li>
+                    <li><i class="fas fa-check-circle"></i> 特色美食品鉴体验</li>
+                </ul>
+                <div class="package-price">
+                    ¥5,666 <span>/人</span>
+                </div>
+                <a href="#" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart"></i> 立即预订
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 统计数据 -->
+    <section class="section stats" id="about">
+        <div class="stats-grid">
+            <div class="stat-item fade-in">
+                <div class="stat-number">10,000+</div>
+                <div class="stat-label">满意客户</div>
+            </div>
+            <div class="stat-item fade-in">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">旅行目的地</div>
+            </div>
+            <div class="stat-item fade-in">
+                <div class="stat-number">8,000+</div>
+                <div class="stat-label">成功旅程</div>
+            </div>
+            <div class="stat-item fade-in">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">客户支持</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 联系我们 -->
+    <section class="section contact" id="contact">
+        <div class="section-title">
+            <h2>📞 联系我们</h2>
+            <p>有任何问题？随时联系我们，我们很乐意为您服务</p>
+        </div>
+        <div class="contact-container">
+            <div class="contact-info">
+                <h3>📍 联系信息</h3>
+                <ul class="contact-details">
+                    <li>
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>北京市朝阳区建国路88号</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-phone"></i>
+                        <span>+86 400-888-9999</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-envelope"></i>
+                        <span>info@wanderlust.com</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-clock"></i>
+                        <span>周一至周日 9:00 - 21:00</span>
+                    </li>
+                </ul>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-weixin"></i></a>
+                    <a href="#"><i class="fab fa-weibo"></i></a>
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            <div class="contact-form">
+                <form>
+                    <div class="form-group">
+                        <label for="name">👤 姓名</label>
+                        <input type="text" id="name" placeholder="请输入您的姓名" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">📧 邮箱</label>
+                        <input type="email" id="email" placeholder="请输入您的邮箱" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">💬 留言</label>
+                        <textarea id="message" placeholder="请告诉我们您的需求..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-paper-plane"></i> 发送消息
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Wanderlust</h3>
+                <p style="color: rgba(255,255,255,0.7); line-height: 1.8; margin-top: 1rem;">
+                    让旅行变得更简单、更美好。我们致力于为您提供最优质的旅行体验。
+                </p>
+            </div>
+            <div class="footer-section">
+                <h3>快速链接</h3>
+                <ul class="footer-links">
+                    <li><a href="#home"><i class="fas fa-chevron-right"></i> 首页</a></li>
+                    <li><a href="#destinations"><i class="fas fa-chevron-right"></i> 目的地</a></li>
+                    <li><a href="#packages"><i class="fas fa-chevron-right"></i> 旅行套餐</a></li>
+                    <li><a href="#about"><i class="fas fa-chevron-right"></i> 关于我们</a></li>
+                    <li><a href="#contact"><i class="fas fa-chevron-right"></i> 联系我们</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>服务支持</h3>
+                <ul class="footer-links">
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> 预订指南</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> 取消政策</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> 隐私政策</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> 使用条款</a></li>
+                    <li><a href="#"><i class="fas fa-chevron-right"></i> 常见问题</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>订阅资讯</h3>
+                <p style="color: rgba(255,255,255,0.7); margin: 1rem 0 1rem 0;">
+                    订阅我们的新闻通讯，获取最新优惠和旅行灵感。
+                </p>
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                    <input type="email" placeholder="📧 您的邮箱" style="flex: 1; padding: 0.75rem; border-radius: 8px; border: none;">
+                    <button class="btn" style="background: var(--primary); color: white; padding: 0.75rem 1.5rem; border-radius: 8px;">
+                        订阅
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2024 Wanderlust 旅行网. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    window.scrollTo({
+                        top: target.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // 滚动动画
+        const fadeElements = document.querySelectorAll('.fade-in');
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('appear');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        fadeElements.forEach(element => {
+            observer.observe(element);
+        });
+
+        // 表单提交
+        const contactForm = document.querySelector('.contact-form form');
+        if (contactForm) {
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                alert('✅ 消息已发送！我们会尽快与您联系。');
+                this.reset();
+            });
+        }
+
+        // 搜索功能
+        const searchButton = document.querySelector('.search-container button');
+        if (searchButton) {
+            searchButton.addEventListener('click', function() {
+                const input = this.parentElement.querySelector('input');
+                if (input.value.trim()) {
+                    alert(`🔍 正在搜索 "${input.value}" 相关的旅行目的地...`);
+                } else {
+                    alert('⚠️ 请输入您想搜索的目的地');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TravelGo - 探索世界，发现美好</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-plane"></i>
+                <span>TravelGo</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">首页</a></li>
+                <li><a href="#destinations">目的地</a></li>
+                <li><a href="#packages">旅行套餐</a></li>
+                <li><a href="#about">关于我们</a></li>
+                <li><a href="#contact">联系我们</a></li>
+            </ul>
+            <div class="nav-buttons">
+                <button class="btn btn-outline">登录</button>
+                <button class="btn btn-primary">注册</button>
+            </div>
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区域 -->
+    <section class="hero" id="home">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <h1>探索世界，发现美好</h1>
+            <p>开启您的梦想之旅，体验不一样的精彩人生</p>
+            <div class="search-box">
+                <input type="text" placeholder="目的地、城市或景点...">
+                <select>
+                    <option>所有类型</option>
+                    <option>海滩度假</option>
+                    <option>文化古迹</option>
+                    <option>自然风光</option>
+                    <option>城市探索</option>
+                </select>
+                <button class="btn btn-primary">搜索旅行</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 特色服务 -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">我们的特色服务</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <h3>精选目的地</h3>
+                    <p>全球超过1000个热门目的地，满足您的各种旅行需求</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-hotel"></i>
+                    </div>
+                    <h3>优质住宿</h3>
+                    <p>精选全球顶级酒店和特色民宿，让您的旅途更加舒适</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-utensils"></i>
+                    </div>
+                    <h3>当地美食</h3>
+                    <p>品尝地道美食，体验当地文化，让味蕾也去旅行</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3>24/7客服</h3>
+                    <p>专业客服团队随时为您服务，解决旅途中的任何问题</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 热门目的地 -->
+    <section class="destinations" id="destinations">
+        <div class="container">
+            <h2 class="section-title">热门目的地</h2>
+            <div class="destinations-grid">
+                <div class="destination-card">
+                    <img src="https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=600" alt="巴黎">
+                    <div class="destination-overlay">
+                        <h3>巴黎，法国</h3>
+                        <p>浪漫之都，艺术与时尚的天堂</p>
+                        <button class="btn btn-outline">查看详情</button>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="https://images.unsplash.com/photo-1534351591094-9f6f8ce5c5bd?w=600" alt="巴厘岛">
+                    <div class="destination-overlay">
+                        <h3>巴厘岛，印尼</h3>
+                        <p>热带天堂，海滩与文化的完美结合</p>
+                        <button class="btn btn-outline">查看详情</button>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="https://images.unsplash.com/photo-1516483638261-f4db3d3d87c4?w=600" alt="京都">
+                    <div class="destination-overlay">
+                        <h3>京都，日本</h3>
+                        <p>千年古都，传统与现代的交融</p>
+                        <button class="btn btn-outline">查看详情</button>
+                    </div>
+                </div>
+                <div class="destination-card">
+                    <img src="https://images.unsplash.com/photo-1519608487953-e999c86e745b?w=600" alt="罗马">
+                    <div class="destination-overlay">
+                        <h3>罗马，意大利</h3>
+                        <p>永恒之城，历史与美食的盛宴</p>
+                        <button class="btn btn-outline">查看详情</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 旅行套餐 -->
+    <section class="packages" id="packages">
+        <div class="container">
+            <h2 class="section-title">精选旅行套餐</h2>
+            <div class="packages-grid">
+                <div class="package-card">
+                    <div class="package-badge">热门</div>
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600" alt="欧洲之旅">
+                    <div class="package-content">
+                        <h3>欧洲经典7日游</h3>
+                        <div class="package-meta">
+                            <span><i class="fas fa-calendar"></i> 7天6晚</span>
+                            <span><i class="fas fa-user"></i> 2-10人</span>
+                        </div>
+                        <p>巴黎、罗马、威尼斯三大名城，一次玩遍欧洲精华</p>
+                        <div class="package-price">
+                            <span class="original-price">¥12,999</span>
+                            <span class="current-price">¥9,999</span>
+                        </div>
+                        <button class="btn btn-primary">立即预订</button>
+                    </div>
+                </div>
+                <div class="package-card">
+                    <div class="package-badge">新品</div>
+                    <img src="https://images.unsplash.com/photo-1530482013092-69c28b67f2e7?w=600" alt="海岛度假">
+                    <div class="package-content">
+                        <h3>马尔代夫5日蜜月之旅</h3>
+                        <div class="package-meta">
+                            <span><i class="fas fa-calendar"></i> 5天4晚</span>
+                            <span><i class="fas fa-user"></i> 2人</span>
+                        </div>
+                        <p>奢华水上别墅，私人沙滩，浪漫晚餐，完美蜜月体验</p>
+                        <div class="package-price">
+                            <span class="original-price">¥25,999</span>
+                            <span class="current-price">¥19,999</span>
+                        </div>
+                        <button class="btn btn-primary">立即预订</button>
+                    </div>
+                </div>
+                <div class="package-card">
+                    <div class="package-badge">特价</div>
+                    <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600" alt="日本之旅">
+                    <div class="package-content">
+                        <h3>日本樱花季8日游</h3>
+                        <div class="package-meta">
+                            <span><i class="fas fa-calendar"></i> 8天7晚</span>
+                            <span><i class="fas fa-user"></i> 4-15人</span>
+                        </div>
+                        <p>东京、京都、大阪，赏樱、美食、购物一站式体验</p>
+                        <div class="package-price">
+                            <span class="original-price">¥15,999</span>
+                            <span class="current-price">¥11,999</span>
+                        </div>
+                        <button class="btn btn-primary">立即预订</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 客户评价 -->
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section-title">客户评价</h2>
+            <div class="testimonials-slider">
+                <div class="testimonial-card">
+                    <div class="testimonial-header">
+                        <div class="stars">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="client-info">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="张小姐">
+                            <div>
+                                <h4>张小姐</h4>
+                                <p>上海</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">这次欧洲之旅太棒了！行程安排得很合理，导游非常专业，酒店也很舒适。特别感谢TravelGo让我有了这么美好的回忆！</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-header">
+                        <div class="stars">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="client-info">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="李先生">
+                            <div>
+                                <h4>李先生</h4>
+                                <p>北京</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">马尔代夫的蜜月之旅超出了我的预期！水上别墅太浪漫了，客服人员也很贴心，帮我们安排了很多惊喜。强烈推荐！</p>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-header">
+                        <div class="stars">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <div class="client-info">
+                            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="王女士">
+                            <div>
+                                <h4>王女士</h4>
+                                <p>广州</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="testimonial-text">日本之旅非常精彩！樱花季的景色美得让人窒息，行程中的美食体验也很棒。下次还会选择TravelGo！</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 订阅 -->
+    <section class="subscribe">
+        <div class="container">
+            <div class="subscribe-content">
+                <h2>订阅我们的新闻通讯</h2>
+                <p>获取最新旅行优惠和独家内容</p>
+                <div class="subscribe-form">
+                    <input type="email" placeholder="您的邮箱地址">
+                    <button class="btn btn-primary">订阅</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="logo">
+                        <i class="fas fa-plane"></i>
+                        <span>TravelGo</span>
+                    </div>
+                    <p>让每一次旅行都成为美好的回忆。我们致力于为您提供最优质的旅行体验。</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-wechat"></i></a>
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>快速链接</h3>
+                    <ul>
+                        <li><a href="#home">首页</a></li>
+                        <li><a href="#destinations">目的地</a></li>
+                        <li><a href="#packages">旅行套餐</a></li>
+                        <li><a href="#about">关于我们</a></li>
+                        <li><a href="#contact">联系我们</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>热门目的地</h3>
+                    <ul>
+                        <li><a href="#">巴黎</a></li>
+                        <li><a href="#">巴厘岛</a></li>
+                        <li><a href="#">京都</a></li>
+                        <li><a href="#">罗马</a></li>
+                        <li><a href="#">马尔代夫</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>联系我们</h3>
+                    <ul class="contact-info">
+                        <li><i class="fas fa-map-marker-alt"></i> 北京市朝阳区建国路88号</li>
+                        <li><i class="fas fa-phone"></i> 400-888-9999</li>
+                        <li><i class="fas fa-envelope"></i> info@travelgo.com</li>
+                        <li><i class="fas fa-clock"></i> 周一至周日 9:00-21:00</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 TravelGo. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
