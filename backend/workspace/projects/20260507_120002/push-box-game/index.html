@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>推箱子游戏 - Sokoban</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-container">
+    <h1>📦 推箱子游戏</h1>
+    
+    <div class="game-info">
+      <div class="info-item">
+        <span class="label">关卡：</span>
+        <span id="level-display">1</span>
+        <button id="prev-level" class="nav-btn">⬅️</button>
+        <button id="next-level" class="nav-btn">➡️</button>
+      </div>
+      <div class="info-item">
+        <span class="label">步数：</span>
+        <span id="steps">0</span>
+      </div>
+    </div>
+    
+    <div class="game-board" id="game-board">
+      <!-- 游戏地图将通过 JavaScript 动态生成 -->
+    </div>
+    
+    <div class="controls">
+      <button id="reset-btn" class="btn">🔄 重置关卡</button>
+      <p>使用方向键 ← ↑ → ↓ 移动，或点击按钮</p>
+      <div class="arrow-controls">
+        <button class="arrow-btn" data-dir="up">↑</button>
+        <div>
+          <button class="arrow-btn" data-dir="left">←</button>
+          <button class="arrow-btn" data-dir="down">↓</button>
+          <button class="arrow-btn" data-dir="right">→</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="instructions">
+      <h3>游戏说明</h3>
+      <ul>
+        <li>🧍 玩家：蓝色方块</li>
+        <li>📦 箱子：棕色方块</li>
+        <li>⭕ 目标：绿色圆圈</li>
+        <li>🧱 墙壁：灰色方块</li>
+        <li>✅ 箱子在目标上：绿色方块</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>

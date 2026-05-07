@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { Readable } from "stream";
 
-export const runtime = "edge";
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -9,7 +10,6 @@ export async function POST(request: NextRequest) {
   console.log("[API Route] Request body:", JSON.stringify(body).slice(0, 200));
 
   const backendUrl = process.env.BACKEND_URL || "http://localhost:8000";
-  console.log("[API Route] Backend URL:", backendUrl);
 
   try {
     const response = await fetch(`${backendUrl}/api/chat/stream`, {
@@ -24,16 +24,17 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error("[API Route] Backend error:", response.status);
-      return NextResponse.json(
-        { error: `Backend error: ${response.status}` },
-        { status: response.status }
-      );
+      const errorText = await response.text();
+      return new Response(JSON.stringify({ error: `Backend error: ${response.status}`, details: errorText }), {
+        status: response.status,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    const stream = response.body;
-    console.log("[API Route] Stream obtained, returning response");
+    // 将 Web Fetch 流转换为 Node.js Readable 流
+    const nodeStream = Readable.fromWeb(response.body as any);
 
-    return new Response(stream, {
+    return new Response(nodeStream as any, {
       headers: {
         "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -43,9 +44,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("[API Route] Proxy error:", error);
-    return NextResponse.json(
-      { error: "Failed to connect to backend" },
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ error: `Failed to connect to backend: ${error}` }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

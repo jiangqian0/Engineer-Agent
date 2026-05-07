@@ -42,32 +42,32 @@ const ThinkingContent: React.FC<{ content: string; isStreaming?: boolean }> = ({
 
   // 长思考内容：显示为可折叠卡片
   return (
-    <div className="my-3 rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50 overflow-hidden shadow-sm">
+    <div className="my-3 rounded-lg border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 overflow-hidden shadow-sm">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-purple-100/50 transition-colors duration-200"
+        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-green-100/50 transition-colors duration-200"
       >
-        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100">
-          <Brain className="w-3.5 h-3.5 text-purple-600" />
+        <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100">
+          <Brain className="w-3.5 h-3.5 text-green-600" />
         </div>
-        <span className="text-sm font-semibold text-purple-700">
+        <span className="text-sm font-semibold text-green-700">
           {isExpanded ? "Hide thinking" : `Show thinking (${content.length} chars)`}
         </span>
         <div className="ml-auto">
           {isExpanded ? (
-            <ChevronDownIcon className="w-4 h-4 text-purple-500 transition-transform duration-200" />
+            <ChevronDownIcon className="w-4 h-4 text-green-500 transition-transform duration-200" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-purple-500 transition-transform duration-200" />
+            <ChevronRight className="w-4 h-4 text-green-500 transition-transform duration-200" />
           )}
         </div>
       </button>
 
       {isExpanded && (
-        <div ref={contentRef} className="px-4 pb-4 border-t border-purple-100">
-          <div className="mt-3 text-sm text-purple-800 whitespace-pre-wrap leading-relaxed">
+        <div ref={contentRef} className="px-4 pb-4 border-t border-green-100">
+          <div className="mt-3 text-sm text-green-800 whitespace-pre-wrap leading-relaxed">
             {content}
             {isStreaming && (
-              <span className="inline-block w-2 h-4 bg-purple-500 ml-1 animate-pulse" />
+              <span className="inline-block w-2 h-4 bg-green-500 ml-1 animate-pulse" />
             )}
           </div>
         </div>
@@ -656,6 +656,9 @@ export default function ChatPage() {
       updateStep("4", "running");
       addLog("success", "Response stream started");
 
+      if (!res.body) {
+        throw new Error("Response body is null");
+      }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";  // 完整的AI响应（包含思考标记）
@@ -720,10 +723,10 @@ export default function ChatPage() {
                 setCurrentToolCall(null);  // 清除当前工具调用
                 if (json.success) {
                   addLog("success", `Tool completed: ${json.tool} (${executionTime}s)`);
-                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'done', message: `✅ 执行完成 (${executionTime}s)` } : null);
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'done', message: `Tool completed (${executionTime}s)` } : null);
                 } else {
                   addLog("error", `Tool failed: ${json.error}`);
-                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'error', message: `❌ 执行失败: ${json.error}` } : null);
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'error', message: `Tool failed: ${json.error}` } : null);
                 }
               }
               // 处理工具执行状态更新
@@ -736,7 +739,7 @@ export default function ChatPage() {
                   setToolExecutionStatus({
                     tool: toolName,
                     status: 'preparing',
-                    message: message || `🔧 准备调用 ${toolName}...`,
+                    message: message || `Preparing ${toolName}...`,
                     startTime: Date.now()
                   });
                 }
@@ -744,7 +747,7 @@ export default function ChatPage() {
                   setToolExecutionStatus({
                     tool: toolName,
                     status: 'executing',
-                    message: message || `⚙️ 正在执行 ${toolName}...`,
+                    message: message || `Executing ${toolName}...`,
                     startTime: Date.now()
                   });
                 }
@@ -752,7 +755,7 @@ export default function ChatPage() {
                   setToolExecutionStatus(prev => prev ? {
                     ...prev,
                     status: 'writing',
-                    message: message || `📝 正在写入文件${json.file_name ? ': ' + json.file_name : ''}...`,
+                    message: message || `Writing file${json.file_name ? ': ' + json.file_name : ''}...`,
                     fileName: json.file_name,
                     totalSize: json.total_size
                   } : null);
@@ -760,7 +763,7 @@ export default function ChatPage() {
                 }
                 else if (statusContent === "complete") {
                   const executionTime = toolExecutionStatus ? ((Date.now() - toolExecutionStatus.startTime) / 1000).toFixed(1) : '0';
-                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'complete', message: `✅ ${toolName} 执行完成 (${executionTime}s)` } : null);
+                  setToolExecutionStatus(prev => prev ? { ...prev, status: 'complete', message: `${toolName} completed (${executionTime}s)` } : null);
                 }
                 else if (statusContent === "done") {
                   setToolExecutionStatus(prev => prev ? { ...prev, status: 'done' } : null);
@@ -1024,8 +1027,8 @@ export default function ChatPage() {
                             {/* 工具执行状态卡片 */}
                             {toolExecutionStatus && (
                               <div className={`rounded-lg border p-4 ${
-                                toolExecutionStatus.status === 'preparing' ? 'bg-purple-50 border-purple-200' :
-                                toolExecutionStatus.status === 'executing' ? 'bg-blue-50 border-blue-200' :
+                                toolExecutionStatus.status === 'preparing' ? 'bg-green-50 border-green-200' :
+                                toolExecutionStatus.status === 'executing' ? 'bg-green-50 border-green-200' :
                                 toolExecutionStatus.status === 'writing' ? 'bg-green-50 border-green-200' :
                                 toolExecutionStatus.status === 'complete' || toolExecutionStatus.status === 'done' ? 'bg-green-50 border-green-300' :
                                 toolExecutionStatus.status === 'error' ? 'bg-red-50 border-red-200' :
@@ -1040,8 +1043,7 @@ export default function ChatPage() {
                                     {toolExecutionStatus.status === 'complete' && <Check className="w-4 h-4 text-green-600" />}
                                     {toolExecutionStatus.status === 'error' && <AlertCircle className="w-4 h-4 text-red-600" />}
                                     <span className={`font-medium text-sm ${
-                                      toolExecutionStatus.status === 'preparing' ? 'text-purple-700' :
-                                      toolExecutionStatus.status === 'executing' || toolExecutionStatus.status === 'writing' ? 'text-blue-700' :
+                                      toolExecutionStatus.status === 'preparing' || toolExecutionStatus.status === 'executing' || toolExecutionStatus.status === 'writing' ? 'text-green-700' :
                                       toolExecutionStatus.status === 'complete' || toolExecutionStatus.status === 'done' ? 'text-green-700' :
                                       toolExecutionStatus.status === 'error' ? 'text-red-700' :
                                       'text-gray-700'
@@ -1078,34 +1080,42 @@ export default function ChatPage() {
                                 {toolExecutionStatus.fileName && (
                                   <div className="mt-2 text-xs text-gray-600 flex items-center gap-1">
                                     <Bot className="w-3 h-3" />
-                                    📄 {toolExecutionStatus.fileName}
+                                    {toolExecutionStatus.fileName}
                                   </div>
                                 )}
                               </div>
                             )}
 
-                            {/* 代码输出区域 */}
+                            {/* 代码输出区域 - 可折叠 */}
                             {showCodeBlock && codeOutput && (
-                              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                {/* 代码块头部 */}
-                                {codeBlockInfo && (
-                                  <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200">
-                                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                                      <Bot className="w-4 h-4" />
-                                      <span className="font-mono">{codeBlockInfo.fileName}</span>
-                                    </div>
-                                    <span className="text-xs text-gray-500">
-                                      {codeBlockInfo.language} • {codeOutput.split('\n').length} lines
+                              <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+                                {/* 可折叠头部 */}
+                                <button
+                                  onClick={() => setShowCodeBlock(!showCodeBlock)}
+                                  className="w-full flex items-center justify-between px-4 py-2 bg-gray-50 hover:bg-gray-100 border-b border-gray-200 transition-colors"
+                                >
+                                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                                    <Bot className="w-4 h-4" />
+                                    <span className="font-mono">{codeBlockInfo?.fileName || 'File'}</span>
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {codeBlockInfo?.language} • {codeOutput.split('\n').length} lines
                                     </span>
                                   </div>
-                                )}
-                                {/* 代码内容 */}
-                                <pre className="p-4 bg-gray-900 text-gray-100 overflow-x-auto text-sm max-h-96 overflow-y-auto">
-                                  <code>{codeOutput}</code>
-                                  {toolExecutionStatus?.status === 'writing' && (
-                                    <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse" />
+                                  {showCodeBlock ? (
+                                    <ChevronDown className="w-4 h-4 text-gray-500" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4 text-gray-500" />
                                   )}
-                                </pre>
+                                </button>
+                                {/* 代码内容 - 可折叠 */}
+                                {showCodeBlock && (
+                                  <pre className="p-4 bg-gray-900 text-gray-100 overflow-x-auto text-sm max-h-96 overflow-y-auto">
+                                    <code>{codeOutput}</code>
+                                    {toolExecutionStatus?.status === 'writing' && (
+                                      <span className="inline-block w-2 h-4 bg-green-400 ml-1 animate-pulse" />
+                                    )}
+                                  </pre>
+                                )}
                               </div>
                             )}
 
@@ -1365,7 +1375,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      <MemoryPanel isOpen={showMemoryPanel} onClose={() => setShowMemoryPanel(false)} conversationId={currentConversationId} />
+      <MemoryPanel isOpen={showMemoryPanel} onClose={() => setShowMemoryPanel(false)} conversationId={currentConversationId || undefined} />
     </div>
   );
 }

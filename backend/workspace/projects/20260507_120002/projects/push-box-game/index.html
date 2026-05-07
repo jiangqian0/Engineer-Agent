@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>推箱子游戏 - Sokoban</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-container">
+    <h1>📦 推箱子游戏</h1>
+    
+    <div class="game-info">
+      <div class="info-item">
+        <span class="label">关卡：</span>
+        <span id="level-display">1</span>
+        <button id="prev-level" class="nav-btn">⬅️</button>
+        <button id="next-level" class="nav-btn">➡️</button>
+      </div>
+      <div class="info-item">
+        <span class="label">步数：</span>
+        <span id="steps">0</span>
+      </div>
+      <div class="info-item">
+        <button id="reset-btn" class="btn">🔄 重置</button>
+      </div>
+    </div>
+
+    <div id="game-board" class="game-board"></div>
+
+    <div class="instructions">
+      <p><strong>玩法说明：</strong>使用方向键（↑ ↓ ← →）移动角色，将所有箱子推到目标位置（⭕）</p>
+    </div>
+
+    <div id="win-message" class="win-message">
+      <h2>🎉 恭喜通关！</h2>
+      <p>你用了 <span id="final-steps">0</span> 步完成本关</p>
+      <button id="next-level-btn" class="btn">下一关</button>
+      <button id="close-win" class="btn">关闭</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
