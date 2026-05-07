@@ -1,0 +1,156 @@
+replicaCount: 2
+
+appName: alicloud-template-agent
+version: v1
+appSystem: hk
+revisionHistoryLimit: "2"
+appVersion: 1.0.0-SNAPSHOT
+
+# Define release label
+env: dev
+release: 1.0.0-SNAPSHOT
+tier: backend
+country: hkg
+budev: ato
+bu: hk
+track: core
+costcenter: 3126
+
+containersSecurityContext: {
+  readOnlyRootFilesystem: false
+}
+
+additionalLables: {
+  aliyun.com/app-language: "python",
+  armsPilotAutoEnable: "on",
+  armsPilotCreateAppName: "alicloud-template-agent-dev" # {project-name}
+}
+
+container:
+  env:
+    - name: APSARA_APM_AGENT_WORKSPACE_DIR
+      value: "/home/pyuser/app"
+    - name: PYTHONPATH
+      value: "/home/pyuser/app/dist-packages/"
+    - name: ENVIRONMENT
+      value: "dev"
+    - name: ROOT_PATH
+      value: "/alicloud-template-agent/web"
+    # ---- Bills 模块配置 ----
+    - name: ALI_PREFIX_STR
+      value: "/alicloud-template-agent/web"
+    - name: ENV_NAME
+      value: "ALL"
+    - name: DB_BILL_OWNER_ID
+      value: "5684930703405044"
+    - name: DEFAULT_BILL_OWNER_ID
+      value: "5684930703405044"
+    - name: DB_TYPE
+      value: "sqlite"
+    - name: BSS_ENDPOINT
+      value: "business-vpc.cn-hongkong.aliyuncs.com"
+    - name: RC_ENDPOINT
+      value: "resourcecenter-intl.vpc-proxy.aliyuncs.com"
+    # AK/SK 通过 Pod Identity (RRSA) 自动注入，无需手动配置
+    # 如需手动指定，取消以下注释并通过 K8s Secret 引用
+    - name: ALIBABA_CLOUD_ACCESS_KEY_ID
+      value: "xxxxx"
+    - name: ALIBABA_CLOUD_ACCESS_KEY_SECRET
+      value: "xxxxx"
+  ports:
+    - name: http
+      containerPort: 8080
+      protocol: TCP
+  livenessProbe:
+    failureThreshold: 3
+    tcpSocket: null
+    httpGet:
+      path: /api/v1/health/live
+      port: http
+      scheme: HTTP
+    initialDelaySeconds: 180
+    periodSeconds: 20
+    successThreshold: 1
+    timeoutSeconds: 10
+  readinessProbe:
+    failureThreshold: 3
+    tcpSocket: null
+    httpGet:
+      path: /api/v1/health/live
+      port: http
+      scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    successThreshold: 1
+    timeoutSeconds: 10      
+    
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+virtualService:
+  hosts:
+    - alicloud-template-agent.ns-hkg-alicloud-system
+  https:
+    - httpName: alicloud-template-agent
+      destinations:
+        - targetSubset: v1
+          weight: 100
+      timeout: 5m
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: 5xx,retriable-4xx,connect-failure,refused-stream,503,504
+
+destinationRule:
+  trafficPolicy:
+      connectionPool:
+        tcp:
+          maxConnections: 50
+        http:
+          http1MaxPendingRequests: 100
+          maxRequestsPerConnection: 10
+      outlierDetection:
+        consecutiveGatewayErrors: 3
+        consecutive5xxErrors: 3
+        interval: 1m
+        baseEjectionTime: 5m
+        maxEjectionPercent: 100     
+      tls:
+        mode: ISTIO_MUTUAL
+      loadBalancer:
+        simple: LEAST_REQUEST
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+        
+ingress:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "4"
+    memory: "4Gi"
+  requests:
+    cpu: "2"
+    memory: "2Gi"
+
+autoscaling:
+  enabled: false
+
+hpa:
+  enabled: false
+  maxReplicas: 2
+  # average total CPU usage per pod (1-100)
+  cpu: 70
+  # average memory usage per pod (100Mi-1Gi)
+  memory: 70
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {
+    pod-identity.alibabacloud.com/role-name: ""  # <---- must be created in advance
+  }

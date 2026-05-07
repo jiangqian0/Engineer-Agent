@@ -1,0 +1,7 @@
+pipelineAliPythonAckDeployment([
+    pipelineRepository: "git@github.com:mfc-innersource/hk-alicloud-template-repo.git",
+    pipelinePropertiesFolder: "pipeline",
+    commonPropertiesFileName: "pipeline/jenkins/common.properties",
+    pipelineRepoBranches: [[name:"feature/inline-cicd"]],
+    propertiesFileName: "pipeline/jenkins/uat/cd.properties"
+])

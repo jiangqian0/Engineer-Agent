@@ -1,0 +1,7 @@
+pipelineAliPythonAckCI([
+    pipelineRepository: "git@github.com:mfc-innersource/hk-alicloud-template-repo.git",
+    pipelinePropertiesFolder: "pipeline",
+    pipelineRepoBranches: [[name:"feature/inline-cicd"]],
+    commonPropertiesFileName: "pipeline/jenkins/common.properties",
+    propertiesFileName: "pipeline/jenkins/dev/ci.properties"
+])
